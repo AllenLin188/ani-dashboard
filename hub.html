@@ -256,6 +256,9 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
     <div class="tab" onclick="switchTab('chat')" id="tab-chat">
       <span class="tab-icon">🤖</span><span>Ani 顧問</span>
     </div>
+    <div class="tab" onclick="switchTab('cloud')" id="tab-cloud">
+      <span class="tab-icon">☁️</span><span>雲端同步</span>
+    </div>
   </nav>
 
   <div class="topbar-right">
@@ -264,6 +267,7 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
       <span id="ib-label" style="color:var(--muted)">未連接</span>
     </div>
     <button id="sync-btn" onclick="syncIB()">⟳ 完整同步</button>
+    <button id="cloud-pull-btn" onclick="cloudPull()" style="padding:5px 13px;background:var(--s2);color:var(--accent);border:1px solid var(--border2);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;transition:all .2s" title="從 GAS 雲端拉取最新快照">☁️ 雲端拉取</button>
     <button id="gh-push-btn" onclick="pushToGitHub()" style="padding:5px 13px;background:var(--s2);color:var(--text);border:1px solid var(--border2);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;transition:all .2s" title="推送所有檔案到 GitHub Pages">🚀 推送 GitHub</button>
     <span id="gh-status" style="font-size:10px;color:var(--muted);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
   </div>
@@ -427,6 +431,65 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
       </div>
     </div><!-- /overview -->
 
+    <!-- ══ CLOUD SYNC CONSOLE PANEL ══ -->
+    <div class="panel" id="panel-cloud" style="overflow-y:auto;padding:24px">
+      <div style="max-width:720px;margin:0 auto">
+        <div style="margin-bottom:20px">
+          <h2 style="font-size:16px;font-weight:700;color:var(--accent);margin-bottom:4px">☁️ 雲端同步控制台</h2>
+          <p style="font-size:11px;color:var(--muted);line-height:1.6">
+            三步驟：① 在 Ani 對話框請求「產出同步 JSON」② 複製 JSON 貼入下方 ③ 按「寫入雲端」<br>
+            任何裝置只需按「☁️ 雲端拉取」即可取得最新快照。GAS_PROXY_URL 在此頁頂端 <code style="background:var(--s2);padding:1px 5px;border-radius:3px;font-size:10px">const GAS_PROXY_URL</code> 定義。
+          </p>
+        </div>
+
+        <!-- URL 狀態顯示 -->
+        <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px">
+          <div style="color:var(--muted);margin-bottom:4px">目前 GAS Proxy URL</div>
+          <div id="cloud-url-display" style="color:var(--accent);word-break:break-all;font-family:monospace;font-size:10px"></div>
+        </div>
+
+        <!-- JSON 輸入框 -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">📋 貼上 Ani 產出的完整 JSON（含 ani_comments 欄位）</div>
+          <textarea id="cloud-json-input" rows="12"
+            placeholder='{&#10;  "ts": 1718134800000,&#10;  "isLive": true,&#10;  "nlv": 246908,&#10;  "excess_liquidity": 104445,&#10;  "maintenance_margin": 142444,&#10;  "available_funds": 89566,&#10;  "leverage": 2.45,&#10;  "usd_twd": 31.68,&#10;  "tsla_price": 384.96,&#10;  "nvda_price": 202.09,&#10;  "qqq_price": 701.84,&#10;  "iwm_price": 283.80,&#10;  "vti_price": 360.70,&#10;  "current_delta": 97.2,&#10;  "positions": [...],&#10;  "ani_comments": {&#10;    "dashboard": "Ani 指揮中心總評語...",&#10;    "opening": "開倉決策引擎評語...",&#10;    "greeks": "Greeks 風控評語...",&#10;    "box_spread": "Box Spread 評語..."&#10;  }&#10;}'
+            style="width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:12px;border-radius:8px;font-size:11px;font-family:monospace;resize:vertical;outline:none;line-height:1.5"
+          ></textarea>
+          <div id="cloud-json-status" style="font-size:11px;color:var(--muted);margin-top:4px;min-height:16px"></div>
+        </div>
+
+        <!-- 操作按鈕列 -->
+        <div style="display:flex;gap:10px;margin-bottom:24px">
+          <button onclick="cloudPushFromTextarea()" style="flex:1;padding:10px;background:var(--accent);color:#000;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;transition:opacity .2s">
+            💾 寫入雲端同步
+          </button>
+          <button onclick="cloudPull()" style="flex:1;padding:10px;background:var(--s2);color:var(--accent);border:1px solid var(--border2);border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;transition:all .2s">
+            ☁️ 從雲端拉取最新
+          </button>
+          <button onclick="generateSyncJSON()" style="flex:1;padding:10px;background:var(--s2);color:var(--green);border:1px solid var(--border2);border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;transition:all .2s">
+            📊 產出目前快照 JSON
+          </button>
+        </div>
+
+        <!-- 最後同步狀態 -->
+        <div style="background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:14px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted2);text-transform:uppercase;margin-bottom:10px">最後同步狀態</div>
+          <div id="cloud-last-sync" style="font-size:12px;color:var(--muted);line-height:1.8">尚未同步</div>
+        </div>
+
+        <!-- 使用說明 -->
+        <div style="background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:14px;margin-top:16px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--accent);text-transform:uppercase;margin-bottom:10px">📖 使用流程</div>
+          <div style="font-size:11px;color:var(--muted);line-height:2">
+            <div>🖥️ <strong style="color:var(--text)">在家（主機）</strong>：「連線 IB 抓取最新數據與 AI 評語」→ 複製 JSON → 貼入上方 → 💾 寫入雲端</div>
+            <div>📱 <strong style="color:var(--text)">在外（手機/平板）</strong>：開啟 GitHub Pages 網址 → 點 ☁️ 雲端拉取 → 全系統即時更新</div>
+            <div>🔄 <strong style="color:var(--text)">自動廣播</strong>：拉取後自動寫入 localStorage 並廣播至所有分頁 iframe（開倉引擎、Greeks、Box 管理）</div>
+            <div>🤖 <strong style="color:var(--text)">AI 評語</strong>：子頁面直接讀取 ani_comments 欄位渲染，無需各自呼叫 API</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /cloud -->
+
     <!-- IFRAME PANELS -->
     <div class="panel iframe-wrap" id="panel-dashboard">
       <iframe id="frame-dashboard" src="" title="戰情儀表"></iframe>
@@ -560,12 +623,20 @@ function switchTab(name) {
   document.getElementById('tab-' + name).classList.add('active');
   document.getElementById('panel-' + name).classList.add('active');
 
-  // Lazy-load iframes
+  // Lazy-load iframes（cloud / overview / chat 不需要 iframe）
   if (FRAME_SRCS[name]) {
     const frame = document.getElementById('frame-' + name);
     if (!frame.src || frame.src === 'about:blank' || frame.src === window.location.href) {
+      // ── 將 GAS_PROXY_URL 寫入 sessionStorage，子頁面啟動時自動讀取 ──
+      try { sessionStorage.setItem('gas_proxy_url', GAS_PROXY_URL); } catch(e){}
       frame.src = FRAME_SRCS[name];
     }
+  }
+
+  // 切換到雲端同步面板時刷新 URL 顯示
+  if (name === 'cloud') {
+    const el = document.getElementById('cloud-url-display');
+    if (el) el.textContent = GAS_PROXY_URL || '（尚未設定 GAS_PROXY_URL）';
   }
 }
 
@@ -611,11 +682,11 @@ async function syncIB() {
   btn.disabled = true;
 
   const steps = [
-    '① 帳戶數據...',
-    '② 倉位明細...',
-    '③ 計算 Greeks...',
-    '④ 股價/匯率...',
-    '⑤ 更新介面...'
+    '① 從雲端拉取快照...',
+    '② 解析倉位數據...',
+    '③ 更新帳戶狀態...',
+    '④ 刷新市價...',
+    '⑤ 廣播子頁面...'
   ];
   let stepIdx = 0;
   const ticker = setInterval(() => {
@@ -623,100 +694,19 @@ async function syncIB() {
   }, 100);
 
   try {
-    // ── STEP 1+2: IB data via GAS Proxy (解決 CORS) ──
+    // ── 架構 B：「完整同步」= 從 GAS 雲端拉取最新快照 ────────────────
+    // IB 即時數據 由 Claude MCP 對話框取得 → 打包 JSON → 貼入雲端同步面板推送
+    // 此按鈕負責把已儲存的最新快照拉下來，讓本機所有頁面同步
     stepIdx = 0;
-    const ibRes = await fetch(GAS_PROXY_URL + '?action=ibkr_sync');
-    if (!ibRes.ok) throw new Error('GAS proxy HTTP ' + ibRes.status);
-    const ibParsed = await ibRes.json();
-    if (ibParsed.error) throw new Error(ibParsed.error);
+    const pulled = await cloudPull();
+    if (!pulled) throw new Error('雲端無快照，請先在 Ani 對話框取得數據後推送');
 
-    // Update account state
-    Object.assign(S, ibParsed.summary, {isLive:true});
-
-    // ── STEP 3: Black-Scholes Greeks for each option ──
-    stepIdx = 2;
-    const TODAY = new Date();
-    const r = 0.045; // risk-free rate
-
-    const newPositions = (ibParsed.positions || []).map(p => {
-      if(p.asset_type !== 'OPT') return {...p, delta:null, theta:null, gamma:null};
-
-      const parsed = parseOptionSymbol(p.description || p.symbol);
-      if(!parsed) return {...p, delta:null, theta:null, gamma:null};
-
-      // Find underlying price from stock positions
-      const stk = (ibParsed.positions||[]).find(x => x.asset_type==='STK' && x.symbol===parsed.sym);
-      const S_price = stk ? stk.market_price : p.market_price * 10; // fallback estimate
-
-      const T = Math.max((parsed.expiry - TODAY) / (365*24*3600*1000), 0.001);
-      // Estimate IV from market price using simplified approach
-      const midIV = p.market_price > 0 ? Math.min(Math.max(p.market_price / S_price * 8, 0.15), 2.0) : 0.45;
-      const g = bsGreeks(S_price, parsed.strike, T, r, midIV, parsed.isCall);
-
-      // Determine strategy
-      const isShort = p.qty < 0;
-      const isBox = p.description && p.description.toUpperCase().includes('BOX');
-      let strat = 'OPT';
-      if(isBox) strat = 'BOX';
-      else if(parsed.isCall && isShort) strat = 'CC';
-      else if(!parsed.isCall && isShort) strat = 'CSP';
-
-      const dte = Math.round(T * 365);
-      const pnlPct = p.unrealized_pnl && p.market_value
-        ? (p.unrealized_pnl / Math.abs(p.market_value) * 100) : 0;
-
-      return {
-        ...p,
-        strat, dte,
-        strike: parsed.strike,
-        isCall: parsed.isCall,
-        underlying: S_price,
-        iv: Math.round(midIV * 100),
-        delta: parseFloat(g.delta.toFixed(3)),
-        theta: parseFloat(g.theta.toFixed(2)),
-        gamma: parseFloat(g.gamma.toFixed(4)),
-        pnlPct: parseFloat(pnlPct.toFixed(1)),
-        origPrem: 0, // not available from IB positions
-        curPrem: Math.abs(p.market_price),
-      };
-    });
-
-    // Update POSITIONS array in-place — only replace if we got real data
-    const optPositions = newPositions.filter(p => p.asset_type === 'OPT');
-    if (optPositions.length > 0) {
-      POSITIONS.length = 0;
-      optPositions.forEach(p => {
-        POSITIONS.push({
-          sym: p.symbol?.split(' ')[0] || '',
-          strat: p.strat || 'OPT',
-          strike: p.strike || 0,
-          qty: Math.abs(p.qty),
-          origPrem: p.origPrem || 0,
-          curPrem: p.curPrem || 0,
-          dte: p.dte || 0,
-          delta: p.delta || 0,
-          ivr: 40,
-          underlying: p.underlying || 0,
-          pnlPct: p.pnlPct || 0,
-        });
-      });
-    }
-    // 若 IB 回傳空倉位（非交易時段），保留現有示範數據
-
-    // Update net delta
-    S.current_delta = POSITIONS.reduce((sum, p) => {
-      if(p.strat === 'BOX') return sum;
-      const sign = (p.strat==='CC'||p.strat==='CSP') ? 1 : -1;
-      return sum + p.delta * p.qty * 100 * sign;
-    }, 0);
-
-    // ── STEP 4: Stock prices + FX via GAS Proxy (解決 CORS) ──
+    // ── STEP 4: 更新市價（Yahoo Finance via GAS，無需 IB 連線）──
     stepIdx = 3;
     await fetchMarketPrices();
 
-    setIBStatus(true);
-    await pushToSheets();   // ← 寫入 Google Sheets 存檔
-    broadcastSync();        // ← 廣播到子頁面
+    setIBStatus(pulled.isLive || false);
+    broadcastSync();  // 重新廣播（含最新市價）
 
   } catch(e) {
     console.error('Full sync error:', e);
@@ -942,25 +932,30 @@ async function sendChat() {
 
 現有倉位需注意：NVDA CSP $215 Delta 0.605（>0.50 危險），TSLA CC $460 獲利 52.8%，VTI CC $370 獲利 50.9%，QQQ BPS $680 虧損 54.6%。`;
 
+  // ── 架構 B：Ani 聊天室直接使用 Claude Artifacts API（無 GAS 中介）──
+  // GAS 只負責快照存取，不做 AI 呼叫
   try {
-    const res = await fetch(GAS_PROXY_URL, {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action: 'claude_chat',
-        system: `你是 Ani，Allen 的選擇權策略顧問兼風險煞車。核心規則：①SPX Box=Delta0不計風控②EL<20%禁CSP/CC③IB無Margin Call直接砍倉④CC滾倉必須Combo Order同步執行⑤TSLA $500賣100股還債,$900賣100股交屋⑥TIMS個股±15%,廣基+6/-8%。Allen 2028交屋目標，資金缺口NT$438萬。回答：中英混用，術語英文，精簡直接，數字優先。\n\n${ctx}`,
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `你是 Ani，Allen 的選擇權策略顧問兼風險煞車。核心規則：①SPX Box=Delta0不計風控②EL<20%禁CSP/CC③IB無Margin Call直接砍倉④CC滾倉必須Combo Order同步執行⑤TSLA $500賣100股還債,$900賣100股交屋⑥TIMS個股±15%,廣基+6/-8%。Allen 2028交屋目標，資金缺口NT$438萬。回答：中英混用，術語英文，精簡直接，數字優先。
+
+${ctx}`,
         messages: chatHistory
       })
     });
     const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    const text = data.text || data.content?.filter(b=>b.type==='text').map(b=>b.text).join('') || '（無回應）';
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('') || '（無回應）';
     chatHistory.push({role:'assistant', content:text});
     document.getElementById(typingId)?.remove();
     addMsg('ai', text);
   } catch(e) {
     document.getElementById(typingId)?.remove();
-    addMsg('ai', '⚠️ 連線錯誤：' + e.message);
+    addMsg('ai', '⚠️ Ani 暫時離線。請直接在 Claude.ai 主視窗與 Ani 對話，完成後把 JSON 貼入☁️雲端同步面板。\n\n錯誤：' + e.message);
   }
   document.getElementById('chat-send').disabled = false;
 }
@@ -984,10 +979,11 @@ function addTyping(id) {
 }
 
 // ════════════════════════════════════════════════
-// GAS 市價代理 + Sheets 同步
-// ════════════════════════════════════════════════
-// ▼ 填入你的 GAS WebApp URL（Step 2 部署後取得）
-const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbzblEAe7HRXbhb-ZwWyIy-eihEN8fzSeRxz_srM2KTh_aJEvBs1C3zOMGcY3DAZ6XOX/exec';
+// GAS PROXY CONFIG
+// 角色：純快取中繼站（存 / 取 JSON 快照 + Yahoo 市價查詢）
+// 不做任何 AI 呼叫 — 所有 AI 分析在 Claude.ai 對話框完成後打包進 JSON
+// ▼ 部署 Code.gs 後填入 WebApp URL
+const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbwrIgyIal80HjAGXokuzqGwQqttUtbMcmhlriW-5nwvwAFh9M0k57VCxo50QWlq-kcT/exec';
 
 async function fetchMarketPrices() {
   try {
@@ -1011,29 +1007,27 @@ async function fetchMarketPrices() {
   }
 }
 
+// pushToSheets 已由 cloudPush() 取代（架構 B 極簡版）
+// 保留空函式避免舊版引用報錯
 async function pushToSheets() {
-  try {
-    const res = await fetch(GAS_PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nlv:                S.nlv,
-        excess_liquidity:   S.excess_liquidity,
-        maintenance_margin: S.maintenance_margin,
-        available_funds:    S.available_funds,
-        leverage:           S.leverage,
-        tsla_price:         S.tsla_price,
-        usd_twd:            S.usd_twd,
-      })
-    });
-    const result = await res.json();
-    console.log('✅ IB 數據已寫入 Sheets，目前共', result.rows, '筆記錄');
-  } catch(err) {
-    console.warn('Sheets 寫入失敗:', err.message);
-  }
+  return cloudPush();
 }
 
-function broadcastSync() {
+function broadcastSync(extraComments) {
+  // ani_comments：優先使用傳入的新評語，否則保留現有快取
+  const existingComments = (() => {
+    try {
+      const raw = localStorage.getItem('hub_sync_data');
+      return raw ? (JSON.parse(raw).ani_comments || {}) : {};
+    } catch(e) { return {}; }
+  })();
+  const ani_comments = Object.assign({
+    dashboard:  '',
+    opening:    '',
+    greeks:     '',
+    box_spread: '',
+  }, existingComments, extraComments || {});
+
   const payload = {
     ts: Date.now(),
     isLive: S.isLive,
@@ -1044,14 +1038,20 @@ function broadcastSync() {
     leverage:           S.leverage,
     usd_twd:    S.usd_twd,
     tsla_price: S.tsla_price,
+    nvda_price: S.nvda_price,
+    qqq_price:  S.qqq_price,
+    iwm_price:  S.iwm_price,
+    vti_price:  S.vti_price,
     current_delta: S.current_delta,
     positions: POSITIONS,
+    ani_comments,
   };
   try {
     localStorage.setItem('hub_sync_data', JSON.stringify(payload));
   } catch(e) {
     console.warn('broadcastSync failed:', e);
   }
+  return payload;  // 供 cloudPush 使用
 }
 
 // ════════════════════════════════════════════════
@@ -1178,48 +1178,196 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ════════════════════════════════════════════════
+// CLOUD SYNC FUNCTIONS
+// ════════════════════════════════════════════════
+
+// 把目前 localStorage 快照推送到 GAS 雲端
+async function cloudPush(snapshotOverride) {
+  const snapshot = snapshotOverride || (() => {
+    try { return JSON.parse(localStorage.getItem('hub_sync_data') || '{}'); } catch(e) { return {}; }
+  })();
+  if (!snapshot.ts) {
+    snapshot.ts = Date.now();
+    snapshot.nlv = S.nlv;
+    snapshot.excess_liquidity = S.excess_liquidity;
+    snapshot.maintenance_margin = S.maintenance_margin;
+    snapshot.available_funds = S.available_funds;
+    snapshot.leverage = S.leverage;
+    snapshot.usd_twd = S.usd_twd;
+    snapshot.positions = POSITIONS;
+    snapshot.isLive = S.isLive;
+  }
+  // GAS doPost 直接存整包 JSON，無需 action 欄位
+  try {
+    const res = await fetch(GAS_PROXY_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(snapshot),
+    });
+    const result = await res.json();
+    if (result.error) throw new Error(result.error + ': ' + (result.message || ''));
+    console.log('✅ 快照已推送 GAS 雲端', new Date().toLocaleTimeString('zh-TW'));
+    updateCloudStatus('☁️ 已推送雲端 · ' + new Date().toLocaleTimeString('zh-TW'), 'var(--green)');
+    return result;
+  } catch(err) {
+    console.warn('⚠️ GAS 推送失敗:', err.message);
+    updateCloudStatus('⚠️ 推送失敗：' + err.message, 'var(--yellow)');
+    return null;
+  }
+}
+
+// 從 GAS 雲端拉取最新快照 → 寫入 localStorage → 廣播
+async function cloudPull() {
+  const btn = document.getElementById('cloud-pull-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '拉取中...'; }
+  try {
+    const res = await fetch(GAS_PROXY_URL + '?action=load_snapshot');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    if (d.error) throw new Error(d.message || d.error);
+
+    // 更新本機 S 狀態
+    if (d.nlv)                S.nlv                = d.nlv;
+    if (d.excess_liquidity)   S.excess_liquidity   = d.excess_liquidity;
+    if (d.maintenance_margin) S.maintenance_margin = d.maintenance_margin;
+    if (d.available_funds)    S.available_funds    = d.available_funds;
+    if (d.leverage)           S.leverage           = d.leverage;
+    if (d.usd_twd)            S.usd_twd            = d.usd_twd;
+    if (d.tsla_price)         S.tsla_price         = d.tsla_price;
+    if (d.nvda_price)         S.nvda_price         = d.nvda_price;
+    if (d.qqq_price)          S.qqq_price          = d.qqq_price;
+    if (d.iwm_price)          S.iwm_price          = d.iwm_price;
+    if (d.vti_price)          S.vti_price          = d.vti_price;
+    if (d.current_delta)      S.current_delta      = d.current_delta;
+    if (d.isLive !== undefined) S.isLive = d.isLive;
+
+    // 更新倉位
+    if (d.positions && d.positions.length) {
+      POSITIONS.length = 0;
+      d.positions.forEach(p => POSITIONS.push(p));
+    }
+
+    // 把 ani_comments 一起帶進 broadcastSync
+    broadcastSync(d.ani_comments || {});
+    updateAll();
+    setIBStatus(d.isLive);
+
+    const age = d.ts ? Math.round((Date.now() - d.ts) / 1000) : 0;
+    const ageStr = age < 60 ? age + '秒前' : Math.round(age/60) + '分鐘前';
+    updateCloudStatus('✅ 雲端拉取成功 · 快照時間：' + ageStr + (d.isLive ? ' · 即時' : ' · 快取'), 'var(--green)');
+    showCloudSyncDetails(d);
+    return d;
+  } catch(err) {
+    updateCloudStatus('⚠️ 拉取失敗：' + err.message, 'var(--yellow)');
+    return null;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '☁️ 雲端拉取'; }
+  }
+}
+
+// 從 textarea 讀取 JSON → 驗證 → 推送
+async function cloudPushFromTextarea() {
+  const ta = document.getElementById('cloud-json-input');
+  const statusEl = document.getElementById('cloud-json-status');
+  if (!ta || !statusEl) return;
+  const raw = ta.value.trim();
+  if (!raw) { statusEl.textContent = '⚠️ 請先貼上 JSON'; statusEl.style.color = 'var(--red)'; return; }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch(e) {
+    statusEl.textContent = '❌ JSON 格式錯誤：' + e.message;
+    statusEl.style.color = 'var(--red)';
+    return;
+  }
+  statusEl.textContent = '✅ JSON 格式正確，推送中...';
+  statusEl.style.color = 'var(--green)';
+
+  // 更新本機狀態
+  if (parsed.nlv)                S.nlv                = parsed.nlv;
+  if (parsed.excess_liquidity)   S.excess_liquidity   = parsed.excess_liquidity;
+  if (parsed.maintenance_margin) S.maintenance_margin = parsed.maintenance_margin;
+  if (parsed.available_funds)    S.available_funds    = parsed.available_funds;
+  if (parsed.leverage)           S.leverage           = parsed.leverage;
+  if (parsed.usd_twd)            S.usd_twd            = parsed.usd_twd;
+  if (parsed.tsla_price)         S.tsla_price         = parsed.tsla_price;
+  if (parsed.current_delta)      S.current_delta      = parsed.current_delta;
+  if (parsed.positions && parsed.positions.length) {
+    POSITIONS.length = 0;
+    parsed.positions.forEach(p => POSITIONS.push(p));
+  }
+  broadcastSync(parsed.ani_comments || {});
+  updateAll();
+
+  const result = await cloudPush(parsed);
+  if (result) {
+    statusEl.textContent = '☁️ 已推送雲端 + 廣播所有分頁 · ' + new Date().toLocaleTimeString('zh-TW');
+    ta.value = '';
+  }
+}
+
+// 把目前帳戶狀態格式化成可貼入的同步 JSON
+function generateSyncJSON() {
+  const ta = document.getElementById('cloud-json-input');
+  if (!ta) return;
+  const existingComments = (() => {
+    try { return (JSON.parse(localStorage.getItem('hub_sync_data') || '{}')).ani_comments || {}; } catch(e) { return {}; }
+  })();
+  const snapshot = {
+    ts:                 Date.now(),
+    isLive:             S.isLive,
+    usd_twd:            S.usd_twd,
+    nlv:                S.nlv,
+    excess_liquidity:   S.excess_liquidity,
+    maintenance_margin: S.maintenance_margin,
+    available_funds:    S.available_funds,
+    leverage:           S.leverage,
+    current_delta:      S.current_delta,
+    tsla_price:         S.tsla_price,
+    nvda_price:         S.nvda_price,
+    qqq_price:          S.qqq_price,
+    iwm_price:          S.iwm_price,
+    vti_price:          S.vti_price,
+    positions:          POSITIONS,
+    ani_comments: Object.assign({ dashboard:'', opening:'', greeks:'', box_spread:'' }, existingComments),
+  };
+  ta.value = JSON.stringify(snapshot, null, 2);
+  document.getElementById('cloud-json-status').textContent = '📊 已產出目前快照，可複製後在其他裝置貼入';
+  document.getElementById('cloud-json-status').style.color = 'var(--accent)';
+}
+
+function updateCloudStatus(msg, color) {
+  const el = document.getElementById('cloud-last-sync');
+  if (el) { el.textContent = msg; el.style.color = color || 'var(--text)'; }
+  const ghStatus = document.getElementById('gh-status');
+  if (ghStatus) { ghStatus.textContent = msg; }
+}
+
+function showCloudSyncDetails(d) {
+  const el = document.getElementById('cloud-last-sync');
+  if (!el) return;
+  const elPct = d.nlv ? (d.excess_liquidity / d.nlv * 100).toFixed(1) : '?';
+  const comments = d.ani_comments || {};
+  el.innerHTML = [
+    '<strong>NLV:</strong> $' + Math.round(d.nlv || 0).toLocaleString(),
+    '<strong>EL:</strong> $' + Math.round(d.excess_liquidity || 0).toLocaleString() + ' (' + elPct + '%)',
+    '<strong>槓桿:</strong> ' + (d.leverage || 0) + '×',
+    '<strong>倉位筆數:</strong> ' + (d.positions || []).length + ' 筆',
+    '<strong>AI 評語:</strong> ' + (comments.dashboard ? '✅ dashboard' : '—') + ' ' + (comments.opening ? '✅ opening' : '—') + ' ' + (comments.greeks ? '✅ greeks' : '—') + ' ' + (comments.box_spread ? '✅ box_spread' : '—'),
+  ].join('<br>');
+}
+
+// ════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════
 updateAll();
 broadcastSync();
-</script>
-<!-- Code injected by live-server -->
-<script>
-	// <![CDATA[  <-- For SVG support
-	if ('WebSocket' in window) {
-		(function () {
-			function refreshCSS() {
-				var sheets = [].slice.call(document.getElementsByTagName("link"));
-				var head = document.getElementsByTagName("head")[0];
-				for (var i = 0; i < sheets.length; ++i) {
-					var elem = sheets[i];
-					var parent = elem.parentElement || head;
-					parent.removeChild(elem);
-					var rel = elem.rel;
-					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
-						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
-						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
-					}
-					parent.appendChild(elem);
-				}
-			}
-			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
-			var address = protocol + window.location.host + window.location.pathname + '/ws';
-			var socket = new WebSocket(address);
-			socket.onmessage = function (msg) {
-				if (msg.data == 'reload') window.location.reload();
-				else if (msg.data == 'refreshcss') refreshCSS();
-			};
-			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
-				console.log('Live reload enabled.');
-				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
-			}
-		})();
-	}
-	else {
-		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
-	}
-	// ]]>
+
+// 初始化雲端控制台 URL 顯示
+(function(){
+  const el = document.getElementById('cloud-url-display');
+  if (el) el.textContent = GAS_PROXY_URL || '（尚未設定 GAS_PROXY_URL）';
+})();
 </script>
 </body>
 </html>
