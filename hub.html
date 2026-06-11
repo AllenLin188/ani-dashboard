@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
+<html lang="zh-TW"><script src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/content/location/location.js" id="eppiocemhmnlbhjplcgkofciiegomcon"></script><script src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/libs/extend-native-history-api.js"></script><script src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/libs/requests.js"></script><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Allen · Trading Hub</title>
@@ -214,95 +212,115 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
   .ov-grid{grid-template-columns:1fr 1fr}
 }
 </style>
-</head>
-<body>
+<script bis_use="true" type="text/javascript" charset="utf-8" nonce="" data-dynamic-id="8f2c989c-c7a8-471f-b1cc-0a84eb33d652" src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/executors/200.js"></script><script bis_use="true" type="text/javascript" charset="utf-8" nonce="" data-dynamic-id="8f2c989c-c7a8-471f-b1cc-0a84eb33d652" src="chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/executors/101.js"></script></head>
+<body __processed_c29d87e6-4b91-4585-b2c8-408590a0f3f9__="true" bis_register="W3sibWFzdGVyIjp0cnVlLCJleHRlbnNpb25JZCI6ImVwcGlvY2VtaG1ubGJoanBsY2drb2ZjaWllZ29tY29uIiwiYWRibG9ja2VyU3RhdHVzIjp7IkRJU1BMQVkiOiJlbmFibGVkIiwiRkFDRUJPT0siOiJlbmFibGVkIiwiVFdJVFRFUiI6ImVuYWJsZWQiLCJSRURESVQiOiJlbmFibGVkIiwiUElOVEVSRVNUIjoiZW5hYmxlZCIsIklOU1RBR1JBTSI6ImVuYWJsZWQiLCJUSUtUT0siOiJkaXNhYmxlZCIsIkxJTktFRElOIjoiZW5hYmxlZCIsIkNPTkZJRyI6ImRpc2FibGVkIn0sInZlcnNpb24iOiIyLjEuMSIsInNjb3JlIjoyMDEwMTB9XQ==">
 
 <!-- ══ TOPBAR ══ -->
-<div id="topbar">
-  <div class="brand">
-    <div class="brand-dot"></div>
-    <div>
-      <div class="brand-title">Allen · Trading Hub</div>
-      <div class="brand-sub">IB Portfolio Margin</div>
+<div id="topbar" bis_skin_checked="1">
+  <div class="brand" bis_skin_checked="1">
+    <div class="brand-dot" bis_skin_checked="1"></div>
+    <div bis_skin_checked="1">
+      <div class="brand-title" bis_skin_checked="1">Allen · Trading Hub</div>
+      <div class="brand-sub" bis_skin_checked="1">IB Portfolio Margin</div>
     </div>
   </div>
 
   <nav class="tabs">
-    <div class="tab active" onclick="switchTab('overview')" id="tab-overview">
+    <div class="tab active" onclick="switchTab('overview')" id="tab-overview" bis_skin_checked="1">
       <span class="tab-icon">🗺️</span><span>總覽</span>
-      <span class="tab-alert" id="alert-count" style="display:none">0</span>
+      <span class="tab-alert" id="alert-count" style="display: inline;">2</span>
     </div>
-    <div class="tab" onclick="switchTab('dashboard')" id="tab-dashboard">
+    <div class="tab" onclick="switchTab('dashboard')" id="tab-dashboard" bis_skin_checked="1">
       <span class="tab-icon">📊</span><span>戰情儀表</span>
     </div>
-    <div class="tab" onclick="switchTab('open')" id="tab-open">
+    <div class="tab" onclick="switchTab('open')" id="tab-open" bis_skin_checked="1">
       <span class="tab-icon">⚡</span><span>開倉決策</span>
     </div>
-    <div class="tab" onclick="switchTab('roll')" id="tab-roll">
+    <div class="tab" onclick="switchTab('roll')" id="tab-roll" bis_skin_checked="1">
       <span class="tab-icon">♻️</span><span>Roll 評估</span>
     </div>
-    <div class="tab" onclick="switchTab('box')" id="tab-box">
+    <div class="tab" onclick="switchTab('box')" id="tab-box" bis_skin_checked="1">
       <span class="tab-icon">📦</span><span>Box 管理</span>
     </div>
-    <div class="tab" onclick="switchTab('daily')" id="tab-daily">
+    <div class="tab" onclick="switchTab('daily')" id="tab-daily" bis_skin_checked="1">
       <span class="tab-icon">📋</span><span>每日日報</span>
     </div>
-    <div class="tab" onclick="switchTab('greeks')" id="tab-greeks">
+    <div class="tab" onclick="switchTab('greeks')" id="tab-greeks" bis_skin_checked="1">
       <span class="tab-icon">🔬</span><span>Greeks</span>
     </div>
-    <div class="tab" onclick="switchTab('def')" id="tab-def">
+    <div class="tab" onclick="switchTab('def')" id="tab-def" bis_skin_checked="1">
       <span class="tab-icon">🏠</span><span>交屋·績效·IV</span>
     </div>
-    <div class="tab" onclick="switchTab('chat')" id="tab-chat">
+    <div class="tab" onclick="switchTab('chat')" id="tab-chat" bis_skin_checked="1">
       <span class="tab-icon">🤖</span><span>Ani 顧問</span>
     </div>
   </nav>
 
-  <div class="topbar-right">
-    <div class="ib-pill">
-      <div class="ib-status-dot" id="ib-dot"></div>
+  <div class="topbar-right" bis_skin_checked="1">
+    <div class="ib-pill" bis_skin_checked="1">
+      <div class="ib-status-dot" id="ib-dot" bis_skin_checked="1"></div>
       <span id="ib-label" style="color:var(--muted)">未連接</span>
     </div>
     <button id="sync-btn" onclick="syncIB()">⟳ 完整同步</button>
+    <button id="gh-push-btn" onclick="pushToGitHub()" style="padding:5px 13px;background:var(--s2);color:var(--text);border:1px solid var(--border2);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;transition:all .2s" title="推送所有檔案到 GitHub Pages" disabled="">🚀 推送 GitHub</button>
+    <span id="gh-status" style="font-size: 10px; color: var(--yellow); max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">上傳中…</span>
+  </div>
+</div>
+
+<!-- ══ GITHUB TOKEN MODAL ══ -->
+<div id="token-modal" style="display: none; position: fixed; inset: 0px; background: rgba(0, 0, 0, 0.7); z-index: 9999; align-items: center; justify-content: center;" bis_skin_checked="1">
+  <div style="background:var(--s1);border:1px solid var(--border2);border-radius:12px;padding:28px 32px;width:420px;max-width:92vw" bis_skin_checked="1">
+    <h3 style="font-size:15px;margin-bottom:8px">🔑 輸入 GitHub Personal Access Token</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+      Token 只存在本次 Session（關分頁即消失）。<br>
+      需要 <code style="background:var(--s2);padding:1px 5px;border-radius:3px">Contents: Read &amp; Write</code> 權限。<br>
+      <a href="https://github.com/settings/tokens?type=beta" target="_blank" style="color:var(--accent)">→ GitHub 產生新 Token（Fine-grained PAT）</a>
+    </p>
+    <input id="token-input" type="password" placeholder="github_pat_... 或 ghp_..." autocomplete="off" style="width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:7px;font-size:13px;margin-bottom:6px;outline:none">
+    <div id="token-hint" style="font-size:11px;color:var(--red);min-height:16px;margin-bottom:12px" bis_skin_checked="1"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end" bis_skin_checked="1">
+      <button onclick="closeTokenModal()" style="padding:7px 16px;background:transparent;border:1px solid var(--border2);color:var(--muted);border-radius:6px;cursor:pointer;font-size:12px">取消</button>
+      <button onclick="saveToken()" style="padding:7px 16px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700">儲存並推送</button>
+    </div>
   </div>
 </div>
 
 <!-- ══ ALERT BAR ══ -->
-<div id="alert-bar">
+<div id="alert-bar" class="show" bis_skin_checked="1">
   <span style="font-weight:700;flex-shrink:0">⚠️ 需要注意：</span>
-  <div class="alert-items" id="alert-items"></div>
+  <div class="alert-items" id="alert-items" bis_skin_checked="1"><span class="alert-chip yellow" onclick="switchTab('roll')">TSLA CC: ⚠️ 獲利&gt;50%</span><span class="alert-chip " onclick="switchTab('roll')">VTI CC: 🔴 Delta超限</span><span class="alert-chip " onclick="switchTab('roll')">NVDA CSP: 🔴 已進價內</span><span class="alert-chip yellow" onclick="switchTab('roll')">QQQ BPS: ⚠️ 虧損&gt;50%</span></div>
   <span style="cursor:pointer;color:var(--muted);font-size:11px;flex-shrink:0" onclick="document.getElementById('alert-bar').classList.remove('show')">✕</span>
 </div>
 
 <!-- ══ MAIN ══ -->
-<div id="main">
+<div id="main" bis_skin_checked="1">
 
   <!-- SIDEBAR -->
   <aside id="sidebar">
     <!-- Account metrics -->
-    <div class="sb-section">
-      <div class="sb-label">帳戶狀態</div>
-      <div class="acct-mini">
-        <div class="am-row">
+    <div class="sb-section" bis_skin_checked="1">
+      <div class="sb-label" bis_skin_checked="1">帳戶狀態</div>
+      <div class="acct-mini" bis_skin_checked="1">
+        <div class="am-row" bis_skin_checked="1">
           <span class="am-label">NLV</span>
           <span class="am-val cyan" id="sb-nlv">$251,749</span>
         </div>
-        <div class="am-sub" id="sb-nlv-sub">≈ NT$797萬</div>
+        <div class="am-sub" id="sb-nlv-sub" bis_skin_checked="1">≈ NT$798萬</div>
       </div>
-      <div class="acct-mini">
-        <div class="am-row">
+      <div class="acct-mini" bis_skin_checked="1">
+        <div class="am-row" bis_skin_checked="1">
           <span class="am-label">Excess Liquidity</span>
-          <span class="am-val" id="sb-el">$107,835</span>
+          <span class="am-val green" id="sb-el">$107,835</span>
         </div>
-        <div class="gbar"><div class="gfill" id="sb-el-bar" style="width:42%;background:var(--green)"></div></div>
-        <div class="am-sub" id="sb-el-sub">42.8% · ✅ 可開新倉</div>
+        <div class="gbar" bis_skin_checked="1"><div class="gfill" id="sb-el-bar" style="width: 42.8343%; background: var(--green);" bis_skin_checked="1"></div></div>
+        <div class="am-sub" id="sb-el-sub" bis_skin_checked="1">42.8% · ✅ 可開新倉</div>
       </div>
-      <div class="acct-mini">
-        <div class="am-row">
+      <div class="acct-mini" bis_skin_checked="1">
+        <div class="am-row" bis_skin_checked="1">
           <span class="am-label">維持率</span>
-          <span class="am-val" id="sb-ratio">174.9%</span>
+          <span class="am-val yellow" id="sb-ratio">174.9%</span>
         </div>
-        <div class="am-row" style="margin-top:3px">
+        <div class="am-row" style="margin-top:3px" bis_skin_checked="1">
           <span class="am-sub" id="sb-delta">淨Delta：80.5</span>
           <span class="am-sub" id="sb-lev">槓桿：2.45×</span>
         </div>
@@ -310,130 +328,297 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
     </div>
 
     <!-- TSLA targets -->
-    <div class="sb-section">
-      <div class="sb-label">TSLA 目標進度</div>
-      <div class="target-mini">
-        <div class="tm-row">
+    <div class="sb-section" bis_skin_checked="1">
+      <div class="sb-label" bis_skin_checked="1">TSLA 目標進度</div>
+      <div class="target-mini" bis_skin_checked="1">
+        <div class="tm-row" bis_skin_checked="1">
           <span>第一階段 $500</span>
           <span class="tm-pct yellow" id="sb-t1-pct">76.8%</span>
         </div>
-        <div class="gbar"><div class="gfill" id="sb-t1-bar" style="width:76.8%;background:var(--yellow)"></div></div>
+        <div class="gbar" bis_skin_checked="1"><div class="gfill" id="sb-t1-bar" style="width: 76.794%; background: var(--yellow);" bis_skin_checked="1"></div></div>
       </div>
-      <div class="target-mini">
-        <div class="tm-row">
+      <div class="target-mini" bis_skin_checked="1">
+        <div class="tm-row" bis_skin_checked="1">
           <span>第二階段 $900</span>
           <span class="tm-pct purple" id="sb-t2-pct" style="color:#c4b5fd">42.7%</span>
         </div>
-        <div class="gbar"><div class="gfill" id="sb-t2-bar" style="width:42.7%;background:var(--purple)"></div></div>
+        <div class="gbar" bis_skin_checked="1"><div class="gfill" id="sb-t2-bar" style="width: 42.6633%; background: var(--purple);" bis_skin_checked="1"></div></div>
       </div>
     </div>
 
     <!-- Positions list -->
-    <div class="sb-section" style="flex:1">
-      <div class="sb-label">期權倉位</div>
-      <div id="sb-positions"></div>
+    <div class="sb-section" style="flex:1" bis_skin_checked="1">
+      <div class="sb-label" bis_skin_checked="1">期權倉位</div>
+      <div id="sb-positions" bis_skin_checked="1"><div class="pos-row watch" onclick="goToRoll('TSLA','CC')" bis_skin_checked="1">
+      <span class="pos-badge pb-cc">CC</span>
+      <div class="pos-info" bis_skin_checked="1">
+        <div class="pos-sym" bis_skin_checked="1">TSLA $460</div>
+        <div class="pos-detail" bis_skin_checked="1">DTE 36d · Δ0.18</div>
+      </div>
+      <span class="pos-pnl green">+53%</span>
+    </div><div class="pos-row urgent" onclick="goToRoll('VTI','CC')" bis_skin_checked="1">
+      <span class="pos-badge pb-cc">CC</span>
+      <div class="pos-info" bis_skin_checked="1">
+        <div class="pos-sym" bis_skin_checked="1">VTI $370</div>
+        <div class="pos-detail" bis_skin_checked="1">DTE 36d · Δ0.38</div>
+      </div>
+      <span class="pos-pnl green">+51%</span>
+    </div><div class="pos-row " onclick="goToRoll('NVDA','CC')" bis_skin_checked="1">
+      <span class="pos-badge pb-cc">CC</span>
+      <div class="pos-info" bis_skin_checked="1">
+        <div class="pos-sym" bis_skin_checked="1">NVDA $235</div>
+        <div class="pos-detail" bis_skin_checked="1">DTE 36d · Δ0.17</div>
+      </div>
+      <span class="pos-pnl green">+20%</span>
+    </div><div class="pos-row " onclick="goToRoll('TSLA','CSP')" bis_skin_checked="1">
+      <span class="pos-badge pb-csp">CSP</span>
+      <div class="pos-info" bis_skin_checked="1">
+        <div class="pos-sym" bis_skin_checked="1">TSLA $370</div>
+        <div class="pos-detail" bis_skin_checked="1">DTE 36d · Δ0.33</div>
+      </div>
+      <span class="pos-pnl red">-40%</span>
+    </div><div class="pos-row urgent" onclick="goToRoll('NVDA','CSP')" bis_skin_checked="1">
+      <span class="pos-badge pb-csp">CSP</span>
+      <div class="pos-info" bis_skin_checked="1">
+        <div class="pos-sym" bis_skin_checked="1">NVDA $215</div>
+        <div class="pos-detail" bis_skin_checked="1">DTE 36d · Δ0.60</div>
+      </div>
+      <span class="pos-pnl red">-39%</span>
+    </div><div class="pos-row " onclick="goToRoll('VTI','CSP')" bis_skin_checked="1">
+      <span class="pos-badge pb-csp">CSP</span>
+      <div class="pos-info" bis_skin_checked="1">
+        <div class="pos-sym" bis_skin_checked="1">VTI $340</div>
+        <div class="pos-detail" bis_skin_checked="1">DTE 36d · Δ0.17</div>
+      </div>
+      <span class="pos-pnl green">+16%</span>
+    </div><div class="pos-row " onclick="goToRoll('IWM','BPS')" bis_skin_checked="1">
+      <span class="pos-badge pb-bps">BPS</span>
+      <div class="pos-info" bis_skin_checked="1">
+        <div class="pos-sym" bis_skin_checked="1">IWM 272/257</div>
+        <div class="pos-detail" bis_skin_checked="1">DTE 36d · Δ0.13</div>
+      </div>
+      <span class="pos-pnl red">-12%</span>
+    </div><div class="pos-row " onclick="goToRoll('IWM','BPS')" bis_skin_checked="1">
+      <span class="pos-badge pb-bps">BPS</span>
+      <div class="pos-info" bis_skin_checked="1">
+        <div class="pos-sym" bis_skin_checked="1">IWM 268/253</div>
+        <div class="pos-detail" bis_skin_checked="1">DTE 36d · Δ0.11</div>
+      </div>
+      <span class="pos-pnl green">+11%</span>
+    </div><div class="pos-row watch" onclick="goToRoll('QQQ','BPS')" bis_skin_checked="1">
+      <span class="pos-badge pb-bps">BPS</span>
+      <div class="pos-info" bis_skin_checked="1">
+        <div class="pos-sym" bis_skin_checked="1">QQQ 680/643</div>
+        <div class="pos-detail" bis_skin_checked="1">DTE 36d · Δ0.14</div>
+      </div>
+      <span class="pos-pnl red">-55%</span>
+    </div><div class="pos-row " onclick="goToRoll('SPX','BOX')" bis_skin_checked="1">
+      <span class="pos-badge pb-box">BOX</span>
+      <div class="pos-info" bis_skin_checked="1">
+        <div class="pos-sym" bis_skin_checked="1">SPX Box</div>
+        <div class="pos-detail" bis_skin_checked="1">DTE 189d · Δ0.00</div>
+      </div>
+      <span class="pos-pnl green">+0%</span>
+    </div></div>
     </div>
 
     <!-- Last update -->
-    <div style="padding:10px 14px;font-size:10px;color:var(--muted2);border-top:1px solid var(--border)" id="last-update">
+    <div style="padding:10px 14px;font-size:10px;color:var(--muted2);border-top:1px solid var(--border)" id="last-update" bis_skin_checked="1">
       示範數據 · 2026-06-11
     </div>
   </aside>
 
   <!-- ══ CONTENT ══ -->
-  <div id="content">
+  <div id="content" bis_skin_checked="1">
 
     <!-- OVERVIEW PANEL -->
-    <div class="panel active" id="panel-overview">
+    <div class="panel active" id="panel-overview" bis_skin_checked="1">
       <!-- 4 metric cards -->
-      <div class="ov-grid">
-        <div class="ov-card">
-          <div class="ov-label">💰 淨清算價值 NLV</div>
-          <div class="ov-val cyan" id="ov-nlv">$251,749</div>
-          <div class="ov-sub" id="ov-nlv-sub">≈ NT$797萬</div>
+      <div class="ov-grid" bis_skin_checked="1">
+        <div class="ov-card" bis_skin_checked="1">
+          <div class="ov-label" bis_skin_checked="1">💰 淨清算價值 NLV</div>
+          <div class="ov-val cyan" id="ov-nlv" bis_skin_checked="1">$251,749</div>
+          <div class="ov-sub" id="ov-nlv-sub" bis_skin_checked="1">≈ NT$798萬</div>
         </div>
-        <div class="ov-card">
-          <div class="ov-label">🛡️ Excess Liquidity</div>
-          <div class="ov-val" id="ov-el">$107,835</div>
-          <div class="ov-sub" id="ov-el-sub">42.8% NLV · ✅ 可開新倉</div>
+        <div class="ov-card" bis_skin_checked="1">
+          <div class="ov-label" bis_skin_checked="1">🛡️ Excess Liquidity</div>
+          <div class="ov-val green" id="ov-el" bis_skin_checked="1">$107,835</div>
+          <div class="ov-sub" id="ov-el-sub" bis_skin_checked="1">42.8% NLV · ✅ 可開新倉</div>
         </div>
-        <div class="ov-card">
-          <div class="ov-label">⏱️ 每日 Theta 收益</div>
-          <div class="ov-val green">$175</div>
-          <div class="ov-sub">≈ NT$5,547/日</div>
+        <div class="ov-card" bis_skin_checked="1">
+          <div class="ov-label" bis_skin_checked="1">⏱️ 每日 Theta 收益</div>
+          <div class="ov-val green" bis_skin_checked="1">$175</div>
+          <div class="ov-sub" bis_skin_checked="1">≈ NT$5,547/日</div>
         </div>
-        <div class="ov-card">
-          <div class="ov-label">📊 本月權利金達成率</div>
-          <div class="ov-val yellow">23.7%</div>
-          <div class="ov-sub">$747 / 目標 $3,200</div>
+        <div class="ov-card" bis_skin_checked="1">
+          <div class="ov-label" bis_skin_checked="1">📊 本月權利金達成率</div>
+          <div class="ov-val yellow" bis_skin_checked="1">23.7%</div>
+          <div class="ov-sub" bis_skin_checked="1">$747 / 目標 $3,200</div>
         </div>
       </div>
 
       <!-- Position scanner -->
-      <div class="section-hd">倉位掃描 · 需要動作的倉位</div>
+      <div class="section-hd" bis_skin_checked="1">倉位掃描 · 需要動作的倉位</div>
       <table class="scan-table" id="scan-table">
         <thead><tr>
           <th style="width:16px"></th>
           <th>倉位</th><th>策略</th><th>DTE</th><th>Delta</th>
           <th>獲利%</th><th>OTM%</th><th>訊號</th><th>建議行動</th>
         </tr></thead>
-        <tbody id="scan-tbody"></tbody>
+        <tbody id="scan-tbody"><tr>
+      <td><span class="signal-dot" style="background:var(--yellow);display:inline-block"></span></td>
+      <td style="font-weight:600">TSLA <span style="font-size:10px;color:var(--muted)">$460 ×4</span></td>
+      <td><span class="pos-badge pb-cc" style="font-size:9px">CC</span></td>
+      <td style="color:var(--text)">36天</td>
+      <td style="color:var(--text)">0.179</td>
+      <td style="color:var(--green);font-weight:600">+52.8%</td>
+      <td style="color:var(--text)">19.8%</td>
+      <td style="font-size:11px">⚠️ 獲利&gt;50%</td>
+      <td><button class="action-btn" style="color:var(--yellow);border-color:var(--yellow)" onclick="goToRoll('TSLA','CC')">準備滾倉 →</button></td>
+    </tr><tr>
+      <td><span class="signal-dot" style="background:var(--red);display:inline-block"></span></td>
+      <td style="font-weight:600">VTI <span style="font-size:10px;color:var(--muted)">$370 ×1</span></td>
+      <td><span class="pos-badge pb-cc" style="font-size:9px">CC</span></td>
+      <td style="color:var(--text)">36天</td>
+      <td style="color:var(--yellow)">0.376</td>
+      <td style="color:var(--green);font-weight:600">+50.9%</td>
+      <td style="color:var(--yellow)">2.8%</td>
+      <td style="font-size:11px">🔴 Delta超限</td>
+      <td><button class="action-btn" style="color:var(--red);border-color:var(--red)" onclick="goToRoll('VTI','CC')">立即滾倉 →</button></td>
+    </tr><tr>
+      <td><span class="signal-dot" style="background:var(--green);display:inline-block"></span></td>
+      <td style="font-weight:600">NVDA <span style="font-size:10px;color:var(--muted)">$235 ×1</span></td>
+      <td><span class="pos-badge pb-cc" style="font-size:9px">CC</span></td>
+      <td style="color:var(--text)">36天</td>
+      <td style="color:var(--text)">0.175</td>
+      <td style="color:var(--green);font-weight:600">+20.0%</td>
+      <td style="color:var(--text)">16.1%</td>
+      <td style="font-size:11px">✅ 健康持倉</td>
+      <td><button class="action-btn" style="color:var(--muted);border-color:var(--border2)" onclick="goToRoll('NVDA','CC')">持續持倉 →</button></td>
+    </tr><tr>
+      <td><span class="signal-dot" style="background:var(--green);display:inline-block"></span></td>
+      <td style="font-weight:600">TSLA <span style="font-size:10px;color:var(--muted)">$370 ×1</span></td>
+      <td><span class="pos-badge pb-csp" style="font-size:9px">CSP</span></td>
+      <td style="color:var(--text)">36天</td>
+      <td style="color:var(--yellow)">0.333</td>
+      <td style="color:var(--red);font-weight:600">-40.3%</td>
+      <td style="color:var(--text)">3.6%</td>
+      <td style="font-size:11px">✅ 健康持倉</td>
+      <td><button class="action-btn" style="color:var(--muted);border-color:var(--border2)" onclick="goToRoll('TSLA','CSP')">持續持倉 →</button></td>
+    </tr><tr>
+      <td><span class="signal-dot" style="background:var(--red);display:inline-block"></span></td>
+      <td style="font-weight:600">NVDA <span style="font-size:10px;color:var(--muted)">$215 ×1</span></td>
+      <td><span class="pos-badge pb-csp" style="font-size:9px">CSP</span></td>
+      <td style="color:var(--text)">36天</td>
+      <td style="color:var(--yellow)">0.605</td>
+      <td style="color:var(--red);font-weight:600">-38.5%</td>
+      <td style="color:var(--red)">-6.3%</td>
+      <td style="font-size:11px">🔴 已進價內</td>
+      <td><button class="action-btn" style="color:var(--red);border-color:var(--red)" onclick="goToRoll('NVDA','CSP')">立即滾倉 →</button></td>
+    </tr><tr>
+      <td><span class="signal-dot" style="background:var(--green);display:inline-block"></span></td>
+      <td style="font-weight:600">VTI <span style="font-size:10px;color:var(--muted)">$340 ×1</span></td>
+      <td><span class="pos-badge pb-csp" style="font-size:9px">CSP</span></td>
+      <td style="color:var(--text)">36天</td>
+      <td style="color:var(--text)">0.167</td>
+      <td style="color:var(--green);font-weight:600">+16.3%</td>
+      <td style="color:var(--text)">5.5%</td>
+      <td style="font-size:11px">✅ 健康持倉</td>
+      <td><button class="action-btn" style="color:var(--muted);border-color:var(--border2)" onclick="goToRoll('VTI','CSP')">持續持倉 →</button></td>
+    </tr><tr>
+      <td><span class="signal-dot" style="background:var(--green);display:inline-block"></span></td>
+      <td style="font-weight:600">IWM <span style="font-size:10px;color:var(--muted)">272/257 ×3</span></td>
+      <td><span class="pos-badge pb-bps" style="font-size:9px">BPS</span></td>
+      <td style="color:var(--text)">36天</td>
+      <td style="color:var(--text)">0.126</td>
+      <td style="color:var(--red);font-weight:600">-11.6%</td>
+      <td style="color:var(--text)">4.2%</td>
+      <td style="font-size:11px">✅ 健康持倉</td>
+      <td><button class="action-btn" style="color:var(--muted);border-color:var(--border2)" onclick="goToRoll('IWM','BPS')">持續持倉 →</button></td>
+    </tr><tr>
+      <td><span class="signal-dot" style="background:var(--green);display:inline-block"></span></td>
+      <td style="font-weight:600">IWM <span style="font-size:10px;color:var(--muted)">268/253 ×3</span></td>
+      <td><span class="pos-badge pb-bps" style="font-size:9px">BPS</span></td>
+      <td style="color:var(--text)">36天</td>
+      <td style="color:var(--text)">0.111</td>
+      <td style="color:var(--green);font-weight:600">+11.1%</td>
+      <td style="color:var(--text)">5.6%</td>
+      <td style="font-size:11px">✅ 健康持倉</td>
+      <td><button class="action-btn" style="color:var(--muted);border-color:var(--border2)" onclick="goToRoll('IWM','BPS')">持續持倉 →</button></td>
+    </tr><tr>
+      <td><span class="signal-dot" style="background:var(--yellow);display:inline-block"></span></td>
+      <td style="font-weight:600">QQQ <span style="font-size:10px;color:var(--muted)">680/665 ×1</span></td>
+      <td><span class="pos-badge pb-bps" style="font-size:9px">BPS</span></td>
+      <td style="color:var(--text)">36天</td>
+      <td style="color:var(--text)">0.136</td>
+      <td style="color:var(--red);font-weight:600">-54.6%</td>
+      <td style="color:var(--yellow)">2.4%</td>
+      <td style="font-size:11px">⚠️ 虧損&gt;50%</td>
+      <td><button class="action-btn" style="color:var(--yellow);border-color:var(--yellow)" onclick="goToRoll('QQQ','BPS')">準備滾倉 →</button></td>
+    </tr><tr>
+        <td><span class="signal-dot" style="background:var(--yellow);display:inline-block"></span></td>
+        <td style="font-weight:600">SPX Box Spread</td>
+        <td><span style="font-size:10px;background:rgba(245,158,11,.1);color:var(--yellow);padding:2px 6px;border-radius:3px">BOX</span></td>
+        <td>189天</td><td style="color:var(--muted)">0</td><td style="color:var(--muted)">—</td><td style="color:var(--muted)">—</td>
+        <td style="font-size:11px;color:var(--yellow)">到期管理</td>
+        <td style="font-size:11px;color:var(--muted)">Delta=0 無方向風險，189天後到期需展延</td>
+      </tr></tbody>
       </table>
 
       <!-- Cash flow alert -->
-      <div class="section-hd">現金流預警</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
-        <div class="ov-card">
-          <div class="ov-label">2026 淨現金流</div>
-          <div class="ov-val red">-NT$56萬</div>
-          <div class="ov-sub">工程款第2期主要支出</div>
+      <div class="section-hd" bis_skin_checked="1">現金流預警</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px" bis_skin_checked="1">
+        <div class="ov-card" bis_skin_checked="1">
+          <div class="ov-label" bis_skin_checked="1">2026 淨現金流</div>
+          <div class="ov-val red" bis_skin_checked="1">-NT$56萬</div>
+          <div class="ov-sub" bis_skin_checked="1">工程款第2期主要支出</div>
         </div>
-        <div class="ov-card">
-          <div class="ov-label">2028 資金缺口</div>
-          <div class="ov-val red">-NT$438萬</div>
-          <div class="ov-sub">🔴 交屋最大壓力點</div>
+        <div class="ov-card" bis_skin_checked="1">
+          <div class="ov-label" bis_skin_checked="1">2028 資金缺口</div>
+          <div class="ov-val red" bis_skin_checked="1">-NT$438萬</div>
+          <div class="ov-sub" bis_skin_checked="1">🔴 交屋最大壓力點</div>
         </div>
-        <div class="ov-card">
-          <div class="ov-label">Box Spread 到期</div>
-          <div class="ov-val yellow">189天</div>
-          <div class="ov-sub">2026/12/17 · NT$154萬</div>
+        <div class="ov-card" bis_skin_checked="1">
+          <div class="ov-label" bis_skin_checked="1">Box Spread 到期</div>
+          <div class="ov-val yellow" bis_skin_checked="1">189天</div>
+          <div class="ov-sub" bis_skin_checked="1">2026/12/17 · NT$154萬</div>
         </div>
-        <div class="ov-card">
-          <div class="ov-label">本月 Theta 目標</div>
-          <div class="ov-val yellow">23.7%</div>
-          <div class="ov-sub">NT$2.4萬 / NT$10萬</div>
+        <div class="ov-card" bis_skin_checked="1">
+          <div class="ov-label" bis_skin_checked="1">本月 Theta 目標</div>
+          <div class="ov-val yellow" bis_skin_checked="1">23.7%</div>
+          <div class="ov-sub" bis_skin_checked="1">NT$2.4萬 / NT$10萬</div>
         </div>
       </div>
     </div><!-- /overview -->
 
     <!-- IFRAME PANELS -->
-    <div class="panel iframe-wrap" id="panel-dashboard">
+    <div class="panel iframe-wrap" id="panel-dashboard" bis_skin_checked="1">
       <iframe id="frame-dashboard" src="" title="戰情儀表"></iframe>
     </div>
-    <div class="panel iframe-wrap" id="panel-open">
+    <div class="panel iframe-wrap" id="panel-open" bis_skin_checked="1">
       <iframe id="frame-open" src="" title="開倉決策引擎"></iframe>
     </div>
-    <div class="panel iframe-wrap" id="panel-roll">
+    <div class="panel iframe-wrap" id="panel-roll" bis_skin_checked="1">
       <iframe id="frame-roll" src="" title="Roll 評估模組"></iframe>
     </div>
 
-    <div class="panel iframe-wrap" id="panel-box">
+    <div class="panel iframe-wrap" id="panel-box" bis_skin_checked="1">
       <iframe id="frame-box" src="" title="Box Spread 管理"></iframe>
     </div>
-    <div class="panel iframe-wrap" id="panel-daily">
+    <div class="panel iframe-wrap" id="panel-daily" bis_skin_checked="1">
       <iframe id="frame-daily" src="" title="每日日報"></iframe>
     </div>
-    <div class="panel iframe-wrap" id="panel-greeks">
+    <div class="panel iframe-wrap" id="panel-greeks" bis_skin_checked="1">
       <iframe id="frame-greeks" src="" title="Portfolio Greeks"></iframe>
     </div>
 
-    <div class="panel iframe-wrap" id="panel-def">
+    <div class="panel iframe-wrap" id="panel-def" bis_skin_checked="1">
       <iframe id="frame-def" src="" title="交屋·績效·IV"></iframe>
     </div>
     <!-- ANI CHAT PANEL -->
-    <div class="panel" id="panel-chat">
-      <div id="ani-chat">
-        <div class="quick-q" id="quick-q">
+    <div class="panel" id="panel-chat" bis_skin_checked="1">
+      <div id="ani-chat" bis_skin_checked="1">
+        <div class="quick-q" id="quick-q" bis_skin_checked="1">
           <button class="qq-btn" onclick="quickQ('目前帳戶維持率安全嗎？需要降槓桿嗎？')">🛡️ 維持率評估</button>
           <button class="qq-btn" onclick="quickQ('哪些倉位需要立即滾倉或平倉？')">♻️ 滾倉掃描</button>
           <button class="qq-btn" onclick="quickQ('目前 Excess Liquidity 狀況，可以開哪些新倉？')">➕ 新倉建議</button>
@@ -441,17 +626,17 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
           <button class="qq-btn" onclick="quickQ('2028 交屋資金缺口 NT$438萬，現在進度如何？')">🏠 交屋進度</button>
           <button class="qq-btn" onclick="quickQ('Box Spread 12月到期，現在需要準備展延嗎？')">📦 Box展延</button>
         </div>
-        <div class="chat-msgs" id="chat-msgs">
-          <div class="msg ai">
-            <div class="msg-av">🤖</div>
-            <div class="msg-bubble">
+        <div class="chat-msgs" id="chat-msgs" bis_skin_checked="1">
+          <div class="msg ai" bis_skin_checked="1">
+            <div class="msg-av" bis_skin_checked="1">🤖</div>
+            <div class="msg-bubble" bis_skin_checked="1">
               嗨 Allen！我是 Ani，你的選擇權策略顧問。<br><br>
               目前帳戶狀態已載入（示範數據 2026-06-11）。點上方「同步 IB」可取得即時數據。<br><br>
               <strong>快速狀態：</strong>Excess Liquidity $107,835（42.8%），帳戶健康。TSLA CC $460 獲利 52.8%，VTI CC $370 獲利 50.9%——兩筆皆達 50% 平倉觸發點，可考慮提前平倉進入新週期。
             </div>
           </div>
         </div>
-        <div class="chat-input-row">
+        <div class="chat-input-row" bis_skin_checked="1">
           <input id="chat-input" type="text" placeholder="問 Ani 任何選擇權策略問題..." onkeydown="if(event.key==='Enter')sendChat()">
           <button id="chat-send" onclick="sendChat()">送出</button>
         </div>
@@ -581,31 +766,12 @@ async function syncIB() {
   }, 100);
 
   try {
-    // ── STEP 1+2: IB MCP → account + positions ──
+    // ── STEP 1+2: IB data via GAS Proxy (解決 CORS) ──
     stepIdx = 0;
-    const ibRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:4000,
-        system:`Call IBKR MCP: first get_account_summary, then get_account_positions.
-Return ONLY this JSON (no markdown):
-{
-  "summary":{"nlv":0,"excess_liquidity":0,"maintenance_margin":0,"available_funds":0,"leverage":0},
-  "positions":[{"symbol":"","description":"","qty":0,"market_price":0,"market_value":0,"unrealized_pnl":0,"asset_type":"OPT"}]
-}`,
-        messages:[{role:'user',content:'Fetch account summary and all positions. Return only JSON.'}],
-        mcp_servers:[{type:'url',url:'https://api.ibkr.com/v1/api/mcp',name:'ibkr'}]
-      })
-    });
-    const ibData = await ibRes.json();
-    let ibTxt = ibData.content.filter(b=>b.type==='text').map(b=>b.text).join('');
-    ibTxt = ibTxt.replace(/```json\n?|```\n?/g,'').trim();
-    // Extract first valid JSON object
-    const jsonMatch = ibTxt.match(/\{[\s\S]*\}/);
-    if(!jsonMatch) throw new Error('No JSON in IB response');
-    const ibParsed = JSON.parse(jsonMatch[0]);
+    const ibRes = await fetch(GAS_PROXY_URL + '?action=ibkr_sync');
+    if (!ibRes.ok) throw new Error('GAS proxy HTTP ' + ibRes.status);
+    const ibParsed = await ibRes.json();
+    if (ibParsed.error) throw new Error(ibParsed.error);
 
     // Update account state
     Object.assign(S, ibParsed.summary, {isLive:true});
@@ -918,18 +1084,18 @@ async function sendChat() {
 現有倉位需注意：NVDA CSP $215 Delta 0.605（>0.50 危險），TSLA CC $460 獲利 52.8%，VTI CC $370 獲利 50.9%，QQQ BPS $680 虧損 54.6%。`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(GAS_PROXY_URL, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        action: 'claude_chat',
         system: `你是 Ani，Allen 的選擇權策略顧問兼風險煞車。核心規則：①SPX Box=Delta0不計風控②EL<20%禁CSP/CC③IB無Margin Call直接砍倉④CC滾倉必須Combo Order同步執行⑤TSLA $500賣100股還債,$900賣100股交屋⑥TIMS個股±15%,廣基+6/-8%。Allen 2028交屋目標，資金缺口NT$438萬。回答：中英混用，術語英文，精簡直接，數字優先。\n\n${ctx}`,
         messages: chatHistory
       })
     });
     const data = await res.json();
-    const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    if (data.error) throw new Error(data.error);
+    const text = data.text || data.content?.filter(b=>b.type==='text').map(b=>b.text).join('') || '（無回應）';
     chatHistory.push({role:'assistant', content:text});
     document.getElementById(typingId)?.remove();
     addMsg('ai', text);
@@ -1030,10 +1196,167 @@ function broadcastSync() {
 }
 
 // ════════════════════════════════════════════════
+// GITHUB PUSH
+// ════════════════════════════════════════════════
+const GH_CONFIG = {
+  owner:  'AllenLin188',
+  repo:   'ani-dashboard',
+  branch: 'main',
+  get token() { return sessionStorage.getItem('gh_token') || ''; },
+};
+
+// 只推送 hub.html（其他子頁面從各自本機推）
+const GH_FILES = ['hub.html'];
+
+async function ghGetSHA(filename) {
+  const url = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${filename}?ref=${GH_CONFIG.branch}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `token ${GH_CONFIG.token}`, Accept: 'application/vnd.github.v3+json' }
+  });
+  if (res.status === 404) return null;
+  const d = await res.json();
+  if (d.message && d.message.includes('Bad credentials')) throw new Error('401');
+  return d.sha || null;
+}
+
+async function ghPushFile(filename, fileContent) {
+  const sha = await ghGetSHA(filename);
+  const body = {
+    message: `Auto-sync ${filename} · ${new Date().toLocaleString('zh-TW')}`,
+    content: btoa(unescape(encodeURIComponent(fileContent))),
+    branch: GH_CONFIG.branch,
+  };
+  if (sha) body.sha = sha;
+  const res = await fetch(`https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${filename}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `token ${GH_CONFIG.token}`,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || res.status);
+  }
+  return res.json();
+}
+
+async function doPush() {
+  const btn = document.getElementById('gh-push-btn');
+  const status = document.getElementById('gh-status');
+  btn.disabled = true;
+  status.style.color = 'var(--yellow)';
+  status.textContent = '上傳中…';
+
+  try {
+    // 取得當前頁面的 HTML 內容
+    const htmlContent = document.documentElement.outerHTML;
+    await ghPushFile('hub.html', htmlContent);
+    status.textContent = '✅ 已推送 · ' + new Date().toLocaleTimeString('zh-TW');
+    status.style.color = 'var(--green)';
+  } catch(e) {
+    if (e.message.includes('401') || e.message.includes('Bad credentials')) {
+      sessionStorage.removeItem('gh_token');
+      status.textContent = '🔑 Token 無效';
+      status.style.color = 'var(--red)';
+      btn.disabled = false;
+      openTokenModal();
+      return;
+    }
+    status.textContent = '❌ ' + e.message.slice(0,40);
+    status.style.color = 'var(--red)';
+  }
+  btn.disabled = false;
+}
+
+function pushToGitHub() {
+  if (!sessionStorage.getItem('gh_token')) {
+    openTokenModal();
+    return;
+  }
+  doPush();
+}
+
+function openTokenModal() {
+  const m = document.getElementById('token-modal');
+  m.style.display = 'flex';
+  document.getElementById('token-hint').textContent = '';
+  setTimeout(() => document.getElementById('token-input').focus(), 100);
+}
+
+function closeTokenModal() {
+  document.getElementById('token-modal').style.display = 'none';
+  document.getElementById('token-input').value = '';
+}
+
+function saveToken() {
+  const val = document.getElementById('token-input').value.trim();
+  if (!val.startsWith('github_pat_') && !val.startsWith('ghp_')) {
+    document.getElementById('token-hint').textContent = '⚠️ 格式不對，應以 github_pat_ 或 ghp_ 開頭';
+    return;
+  }
+  sessionStorage.setItem('gh_token', val);
+  closeTokenModal();
+  doPush();
+}
+
+// Close modal on backdrop click
+document.getElementById('token-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeTokenModal();
+});
+
+// Enter key shortcut
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('token-modal').style.display === 'flex') saveToken();
+  if (e.key === 'Escape') closeTokenModal();
+});
+
+// ════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════
 updateAll();
 broadcastSync();
 </script>
-</body>
-</html>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+
+
+</body></html>
