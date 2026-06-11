@@ -377,64 +377,25 @@ function renderIBOrder(amt, fx, rate, exp) {
 }
 
 // ── ANI COMMENT ──
-// [GitHub Pages] Ani AI 評語已停用（需要 Anthropic API Key）
-// 請在 Claude.ai 開啟 Hub 使用完整 AI 功能
-function getAniComment() {
-  const boxes = document.querySelectorAll('#ani-box, #ani-comment, #ani-briefing, #ani-analysis');
-  boxes.forEach(el => {
-    if (!el) return;
-    el.innerHTML = `
-      <div style="padding:12px 14px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:8px;font-size:11px;line-height:1.8;color:#a5b4fc">
-        <div style="font-weight:700;margin-bottom:6px">📋 靜態規則提示（GitHub Pages 版）</div>
-        <div>① <strong>EL &lt; 20% NLV</strong> → 禁開 CSP / CC，只能 BPS（廣基指數）</div>
-        <div>② <strong>Delta 上限</strong>：單腿 &lt; 0.30，組合淨 Delta &lt; ±200</div>
-        <div>③ <strong>TIMS 壓測</strong>：個股 ±15%，廣基 +6% / −8%</div>
-        <div>④ <strong>IB 無 Margin Call</strong>，Excess Liquidity → 0 即自動砍倉</div>
-        <div>⑤ <strong>CC / CSP Roll</strong>：必須 Combo Order 同步執行，禁止分腿</div>
-        <div style="margin-top:8px;color:#6366f1">💡 完整 Ani AI 分析請在 Claude.ai 中使用</div>
-      </div>`;
-  });
+async function getAniComment() {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:`你是 Ani，Allen 的選擇權策略顧問。Box Spread 核心規則：①歐式SPX Box = Delta0/Gamma0，絕對不能提前指派②帳面損益為假象③唯一風險=保證金佔用壓迫EL④利率目標<4.3%。簡潔直接，中英混用。`,
+        messages:[{role:'user',content:`Allen 的 Box Spread 狀況：借款 NT$154萬（$48,640 USD），利率 4.15%，2026/12/17 到期（189天後），每月利息 NT$5,322。帳戶 Excess Liquidity NT$107,835（42.8% NLV），Box 保證金約佔 EL 45%。2026/10月前評估展延，目標利率 <4.3%。給 3 點評語：①現在需要立即行動嗎？②展延時機建議③利率談判策略。`}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    document.getElementById('ani-box').innerHTML = text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  } catch(e) {
+    document.getElementById('ani-box').textContent = '⚠️ AI 評語載入失敗';
+  }
 }
-// [GitHub Pages] Ani AI 評語已停用（需要 Anthropic API Key）
-// 請在 Claude.ai 開啟 Hub 使用完整 AI 功能
-function getAniComment() {
-  const boxes = document.querySelectorAll('#ani-box, #ani-comment, #ani-briefing, #ani-analysis');
-  boxes.forEach(el => {
-    if (!el) return;
-    el.innerHTML = `
-      <div style="padding:12px 14px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:8px;font-size:11px;line-height:1.8;color:#a5b4fc">
-        <div style="font-weight:700;margin-bottom:6px">📋 靜態規則提示（GitHub Pages 版）</div>
-        <div>① <strong>EL &lt; 20% NLV</strong> → 禁開 CSP / CC，只能 BPS（廣基指數）</div>
-        <div>② <strong>Delta 上限</strong>：單腿 &lt; 0.30，組合淨 Delta &lt; ±200</div>
-        <div>③ <strong>TIMS 壓測</strong>：個股 ±15%，廣基 +6% / −8%</div>
-        <div>④ <strong>IB 無 Margin Call</strong>，Excess Liquidity → 0 即自動砍倉</div>
-        <div>⑤ <strong>CC / CSP Roll</strong>：必須 Combo Order 同步執行，禁止分腿</div>
-        <div style="margin-top:8px;color:#6366f1">💡 完整 Ani AI 分析請在 Claude.ai 中使用</div>
-      </div>`;
-  });
-}
-function getAiBriefing() { getAniComment(); }
-// [GitHub Pages] Ani AI 評語已停用（需要 Anthropic API Key）
-// 請在 Claude.ai 開啟 Hub 使用完整 AI 功能
-function getAniComment() {
-  const boxes = document.querySelectorAll('#ani-box, #ani-comment, #ani-briefing, #ani-analysis');
-  boxes.forEach(el => {
-    if (!el) return;
-    el.innerHTML = `
-      <div style="padding:12px 14px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:8px;font-size:11px;line-height:1.8;color:#a5b4fc">
-        <div style="font-weight:700;margin-bottom:6px">📋 靜態規則提示（GitHub Pages 版）</div>
-        <div>① <strong>EL &lt; 20% NLV</strong> → 禁開 CSP / CC，只能 BPS（廣基指數）</div>
-        <div>② <strong>Delta 上限</strong>：單腿 &lt; 0.30，組合淨 Delta &lt; ±200</div>
-        <div>③ <strong>TIMS 壓測</strong>：個股 ±15%，廣基 +6% / −8%</div>
-        <div>④ <strong>IB 無 Margin Call</strong>，Excess Liquidity → 0 即自動砍倉</div>
-        <div>⑤ <strong>CC / CSP Roll</strong>：必須 Combo Order 同步執行，禁止分腿</div>
-        <div style="margin-top:8px;color:#6366f1">💡 完整 Ani AI 分析請在 Claude.ai 中使用</div>
-      </div>`;
-  });
-}
-function getAiBriefing() { getAniComment(); }
-function getAiComment()   { getAniComment(); }
-function getAiComment()   { getAniComment(); }
 
 // INIT
 renderCountdown();
@@ -486,5 +447,6 @@ window.addEventListener('storage', e => {
 loadSync();
 
 </script>
+
 </body>
 </html>

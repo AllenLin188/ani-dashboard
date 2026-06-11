@@ -563,26 +563,148 @@ function parseOptionSymbol(desc) {
   return {sym:m[1], expiry:exp, strike:parseFloat(m[5]), isCall:m[6]==='C'};
 }
 
-// [GitHub Pages] IB 同步已停用
-// IB MCP 只能在 Claude.ai 環境執行
-function syncIB() {
+async function syncIB() {
   const btn = document.getElementById('sync-btn');
-  if (btn) {
-    btn.textContent = '請在 Claude.ai 同步';
-    btn.style.background = 'var(--yellow, #f59e0b)';
-    btn.style.color = '#000';
-    setTimeout(() => {
-      btn.textContent = '⟳ 同步 IB';
-      btn.style.background = '';
-      btn.style.color = '';
-    }, 3000);
+  const lbl = document.getElementById('ib-label');
+  btn.disabled = true;
+
+  const steps = [
+    '① 帳戶數據...',
+    '② 倉位明細...',
+    '③ 計算 Greeks...',
+    '④ 股價/匯率...',
+    '⑤ 更新介面...'
+  ];
+  let stepIdx = 0;
+  const ticker = setInterval(() => {
+    btn.textContent = steps[Math.min(stepIdx, steps.length-1)];
+  }, 100);
+
+  try {
+    // ── STEP 1+2: IB MCP → account + positions ──
+    stepIdx = 0;
+    const ibRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4000,
+        system:`Call IBKR MCP: first get_account_summary, then get_account_positions.
+Return ONLY this JSON (no markdown):
+{
+  "summary":{"nlv":0,"excess_liquidity":0,"maintenance_margin":0,"available_funds":0,"leverage":0},
+  "positions":[{"symbol":"","description":"","qty":0,"market_price":0,"market_value":0,"unrealized_pnl":0,"asset_type":"OPT"}]
+}`,
+        messages:[{role:'user',content:'Fetch account summary and all positions. Return only JSON.'}],
+        mcp_servers:[{type:'url',url:'https://api.ibkr.com/v1/api/mcp',name:'ibkr'}]
+      })
+    });
+    const ibData = await ibRes.json();
+    let ibTxt = ibData.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    ibTxt = ibTxt.replace(/```json\n?|```\n?/g,'').trim();
+    // Extract first valid JSON object
+    const jsonMatch = ibTxt.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('No JSON in IB response');
+    const ibParsed = JSON.parse(jsonMatch[0]);
+
+    // Update account state
+    Object.assign(S, ibParsed.summary, {isLive:true});
+
+    // ── STEP 3: Black-Scholes Greeks for each option ──
+    stepIdx = 2;
+    const TODAY = new Date();
+    const r = 0.045; // risk-free rate
+
+    const newPositions = (ibParsed.positions || []).map(p => {
+      if(p.asset_type !== 'OPT') return {...p, delta:null, theta:null, gamma:null};
+
+      const parsed = parseOptionSymbol(p.description || p.symbol);
+      if(!parsed) return {...p, delta:null, theta:null, gamma:null};
+
+      // Find underlying price from stock positions
+      const stk = (ibParsed.positions||[]).find(x => x.asset_type==='STK' && x.symbol===parsed.sym);
+      const S_price = stk ? stk.market_price : p.market_price * 10; // fallback estimate
+
+      const T = Math.max((parsed.expiry - TODAY) / (365*24*3600*1000), 0.001);
+      // Estimate IV from market price using simplified approach
+      const midIV = p.market_price > 0 ? Math.min(Math.max(p.market_price / S_price * 8, 0.15), 2.0) : 0.45;
+      const g = bsGreeks(S_price, parsed.strike, T, r, midIV, parsed.isCall);
+
+      // Determine strategy
+      const isShort = p.qty < 0;
+      const isBox = p.description && p.description.toUpperCase().includes('BOX');
+      let strat = 'OPT';
+      if(isBox) strat = 'BOX';
+      else if(parsed.isCall && isShort) strat = 'CC';
+      else if(!parsed.isCall && isShort) strat = 'CSP';
+
+      const dte = Math.round(T * 365);
+      const pnlPct = p.unrealized_pnl && p.market_value
+        ? (p.unrealized_pnl / Math.abs(p.market_value) * 100) : 0;
+
+      return {
+        ...p,
+        strat, dte,
+        strike: parsed.strike,
+        isCall: parsed.isCall,
+        underlying: S_price,
+        iv: Math.round(midIV * 100),
+        delta: parseFloat(g.delta.toFixed(3)),
+        theta: parseFloat(g.theta.toFixed(2)),
+        gamma: parseFloat(g.gamma.toFixed(4)),
+        pnlPct: parseFloat(pnlPct.toFixed(1)),
+        origPrem: 0, // not available from IB positions
+        curPrem: Math.abs(p.market_price),
+      };
+    });
+
+    // Update POSITIONS array in-place
+    POSITIONS.length = 0;
+    newPositions.forEach(p => {
+      if(p.asset_type === 'OPT') {
+        POSITIONS.push({
+          sym: p.symbol?.split(' ')[0] || '',
+          strat: p.strat || 'OPT',
+          strike: p.strike || 0,
+          qty: Math.abs(p.qty),
+          origPrem: p.origPrem || 0,
+          curPrem: p.curPrem || 0,
+          dte: p.dte || 0,
+          delta: p.delta || 0,
+          ivr: 40, // default; would need separate IVR API
+          underlying: p.underlying || 0,
+          pnlPct: p.pnlPct || 0,
+        });
+      }
+    });
+
+    // Update net delta
+    S.current_delta = POSITIONS.reduce((sum, p) => {
+      if(p.strat === 'BOX') return sum;
+      const sign = (p.strat==='CC'||p.strat==='CSP') ? 1 : -1;
+      return sum + p.delta * p.qty * 100 * sign;
+    }, 0);
+
+    // ── STEP 4: Stock prices + FX via GAS Proxy (解決 CORS) ──
+    stepIdx = 3;
+    await fetchMarketPrices();
+
+    setIBStatus(true);
+    await pushToSheets();   // ← 寫入 Google Sheets 存檔
+    broadcastSync();        // ← 廣播到子頁面
+
+  } catch(e) {
+    console.error('Full sync error:', e);
+    setIBStatus(false);
+    lbl.textContent = '同步失敗：' + e.message.slice(0,30);
   }
-  // Show toast
-  const label = document.getElementById('ib-label');
-  if (label) {
-    label.textContent = '⚠️ GitHub版：請用 Claude.ai';
-    label.style.color = 'var(--yellow, #f59e0b)';
-  }
+
+  // ── STEP 5: Refresh all UI ──
+  stepIdx = 4;
+  clearInterval(ticker);
+  updateAll();
+  btn.disabled = false;
+  btn.textContent = '⟳ 完整同步';
 }
 
 function setIBStatus(live) {
@@ -778,21 +900,45 @@ function quickQ(q) {
   sendChat();
 }
 
-// [GitHub Pages] Ani Chat 已停用
-let chatHistory = [];
-function sendChat() {
+async function sendChat() {
   const input = document.getElementById('chat-input');
-  if (input) input.value = '';
-  const c = document.getElementById('chat-msgs');
-  if (c) {
-    const d = document.createElement('div');
-    d.className = 'msg ai';
-    d.innerHTML = '<div class="msg-av">🤖</div><div class="msg-bubble">⚠️ GitHub Pages 版不支援 AI 對話。<br>請至 <strong>Claude.ai</strong> 開啟 Hub 使用完整功能。</div>';
-    c.appendChild(d);
-    c.scrollTop = c.scrollHeight;
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+
+  addMsg('user', msg);
+  const typingId = 't' + Date.now();
+  addTyping(typingId);
+  document.getElementById('chat-send').disabled = true;
+
+  chatHistory.push({role:'user', content: msg});
+
+  const ctx = `帳戶狀態（${S.isLive ? '即時' : '示範'}）：NLV $${Math.round(S.nlv).toLocaleString()}，EL $${Math.round(S.excess_liquidity).toLocaleString()}（${(S.excess_liquidity/S.nlv*100).toFixed(1)}%），維持率 ${(S.nlv/S.maintenance_margin*100).toFixed(1)}%，槓桿 ${S.leverage}×，淨Delta ${S.current_delta}。TSLA現價 $${S.tsla_price}。${S.excess_liquidity/S.nlv<0.2?'⚠️ EL<20%：只能開BPS！':'帳戶健康，可開新倉。'}
+
+現有倉位需注意：NVDA CSP $215 Delta 0.605（>0.50 危險），TSLA CC $460 獲利 52.8%，VTI CC $370 獲利 50.9%，QQQ BPS $680 虧損 54.6%。`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `你是 Ani，Allen 的選擇權策略顧問兼風險煞車。核心規則：①SPX Box=Delta0不計風控②EL<20%禁CSP/CC③IB無Margin Call直接砍倉④CC滾倉必須Combo Order同步執行⑤TSLA $500賣100股還債,$900賣100股交屋⑥TIMS個股±15%,廣基+6/-8%。Allen 2028交屋目標，資金缺口NT$438萬。回答：中英混用，術語英文，精簡直接，數字優先。\n\n${ctx}`,
+        messages: chatHistory
+      })
+    });
+    const data = await res.json();
+    const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    chatHistory.push({role:'assistant', content:text});
+    document.getElementById(typingId)?.remove();
+    addMsg('ai', text);
+  } catch(e) {
+    document.getElementById(typingId)?.remove();
+    addMsg('ai', '⚠️ 連線錯誤：' + e.message);
   }
+  document.getElementById('chat-send').disabled = false;
 }
-function quickQ(q) { sendChat(); }
 
 function addMsg(role, text) {
   const c = document.getElementById('chat-msgs');

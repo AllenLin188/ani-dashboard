@@ -309,7 +309,7 @@ async function generateReport() {
 
   // Try to fetch IB data
   try {
-    const res = await fetch('https://DISABLED.anthropic.com/v1/messages', {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -358,7 +358,7 @@ async function generateAniBriefing() {
   }).map(p => `${p.sym} ${p.strat} $${p.strike}（${p.pnlPct.toFixed(0)}%）`).join(', ');
 
   try {
-    const res = await fetch('https://DISABLED.anthropic.com/v1/messages', {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -435,5 +435,6 @@ window.addEventListener('storage', e => {
 loadSync();
 
 </script>
+
 </body>
 </html>
