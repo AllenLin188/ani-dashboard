@@ -940,6 +940,40 @@ async function getAIComment(r) {
 // INIT
 // ════════════════════════════════════════
 updateAccountStrip();
+
+// ── Hub Sync Receiver ──────────────────────────
+function loadSync() {
+  try {
+    const raw = localStorage.getItem('hub_sync_data');
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    Object.assign(STATE, {
+      nlv:                d.nlv,
+      excess_liquidity:   d.excess_liquidity,
+      maintenance_margin: d.maintenance_margin,
+      initial_margin:     d.maintenance_margin * 1.1,
+      available_funds:    d.available_funds,
+      leverage:           d.leverage,
+    });
+    updateAccountStrip();
+    const age = Math.round((Date.now() - d.ts) / 1000);
+    const src = d.isLive ? '✅ Hub 即時同步' : '📋 Hub 快取';
+    const status = document.getElementById('ib-status');
+    if (status) {
+      status.textContent = src + ' · ' + (age < 60 ? age + '秒前' : Math.round(age/60) + '分前');
+      status.style.color = d.isLive ? 'var(--green)' : 'var(--yellow)';
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+window.addEventListener('storage', e => {
+  if (e.key === 'hub_sync_data') loadSync();
+});
+
+// Try hub sync first; fall back to local STATE defaults
+if (!loadSync()) updateAccountStrip();
+
 </script>
 </body>
 </html>
