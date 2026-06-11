@@ -888,64 +888,35 @@ function buildIBOrder(r) {
 // ════════════════════════════════════════════
 // ANI AI COMMENT
 // ════════════════════════════════════════════
-// [GitHub Pages] Ani AI 評語已停用（需要 Anthropic API Key）
-// 請在 Claude.ai 開啟 Hub 使用完整 AI 功能
-function getAniComment() {
-  const boxes = document.querySelectorAll('#ani-box, #ani-comment, #ani-briefing, #ani-analysis');
-  boxes.forEach(el => {
-    if (!el) return;
-    el.innerHTML = `
-      <div style="padding:12px 14px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:8px;font-size:11px;line-height:1.8;color:#a5b4fc">
-        <div style="font-weight:700;margin-bottom:6px">📋 靜態規則提示（GitHub Pages 版）</div>
-        <div>① <strong>EL &lt; 20% NLV</strong> → 禁開 CSP / CC，只能 BPS（廣基指數）</div>
-        <div>② <strong>Delta 上限</strong>：單腿 &lt; 0.30，組合淨 Delta &lt; ±200</div>
-        <div>③ <strong>TIMS 壓測</strong>：個股 ±15%，廣基 +6% / −8%</div>
-        <div>④ <strong>IB 無 Margin Call</strong>，Excess Liquidity → 0 即自動砍倉</div>
-        <div>⑤ <strong>CC / CSP Roll</strong>：必須 Combo Order 同步執行，禁止分腿</div>
-        <div style="margin-top:8px;color:#6366f1">💡 完整 Ani AI 分析請在 Claude.ai 中使用</div>
-      </div>`;
-  });
+async function getAniComment(r) {
+  const el = document.getElementById('ani-box');
+  if (!el) return;
+
+  let prompt = '';
+  if (!r.isSpread) {
+    prompt = `Allen 正評估 ${r.strat} 滾倉：${r.sym} ${r.strat} $${r.curStrike}，${r.qty}口，DTE ${r.curDte}天，原收 $${r.origPrem}，現價 $${r.curPrem}，獲利 ${r.pnlPct.toFixed(1)}%，Delta ${r.curDelta}，標的 $${r.underlying}，IVR ${r.ivr}，OTM ${r.otmPct.toFixed(1)}%。評估結果：${r.urgency === 'urgent' ? '立即行動' : r.urgency === 'watch' ? '關注窗口' : '耐心持倉'}。新目標：Strike $${r.newStrike}，${r.newExpRaw || '待定'}，新權利金 $${r.newPrem || '待填'}。給精簡3點評語：①滾倉時機評分、②最大風險、③操作建議。`;
+  } else {
+    prompt = `Allen 評估 ${r.strat} 滾倉：${r.sym} $${r.bShort}/$${r.bLong}，${r.qty}口，DTE ${r.curDte}天，原收 $${r.origPrem}，現價 $${r.curPrem}，損益 ${r.pnlPct.toFixed(1)}%，標的 $${r.underlying}，Short Delta ${r.curDelta}。評估：${r.urgency}。給3點評語：①倉位健康度、②滾倉/平倉判斷、③具體建議。`;
+  }
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `你是 Ani，Allen 的選擇權策略顧問。核心：①CC滾倉必須同步執行Combo Order②獲利50%可提前平倉進新週期③DTE<21進決策窗口④Delta>0.30(CC)或>0.50(CSP)需立即滾倉⑤IVR低時不建議滾入新倉。簡潔3點，中英混用，術語英文。`,
+        messages: [{role:'user', content: prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.filter(b => b.type==='text').map(b=>b.text).join('');
+    el.innerHTML = text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  } catch(e) {
+    el.textContent = '⚠️ AI 評語載入失敗';
+  }
 }
-// [GitHub Pages] Ani AI 評語已停用（需要 Anthropic API Key）
-// 請在 Claude.ai 開啟 Hub 使用完整 AI 功能
-function getAniComment() {
-  const boxes = document.querySelectorAll('#ani-box, #ani-comment, #ani-briefing, #ani-analysis');
-  boxes.forEach(el => {
-    if (!el) return;
-    el.innerHTML = `
-      <div style="padding:12px 14px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:8px;font-size:11px;line-height:1.8;color:#a5b4fc">
-        <div style="font-weight:700;margin-bottom:6px">📋 靜態規則提示（GitHub Pages 版）</div>
-        <div>① <strong>EL &lt; 20% NLV</strong> → 禁開 CSP / CC，只能 BPS（廣基指數）</div>
-        <div>② <strong>Delta 上限</strong>：單腿 &lt; 0.30，組合淨 Delta &lt; ±200</div>
-        <div>③ <strong>TIMS 壓測</strong>：個股 ±15%，廣基 +6% / −8%</div>
-        <div>④ <strong>IB 無 Margin Call</strong>，Excess Liquidity → 0 即自動砍倉</div>
-        <div>⑤ <strong>CC / CSP Roll</strong>：必須 Combo Order 同步執行，禁止分腿</div>
-        <div style="margin-top:8px;color:#6366f1">💡 完整 Ani AI 分析請在 Claude.ai 中使用</div>
-      </div>`;
-  });
-}
-function getAiBriefing() { getAniComment(); }
-// [GitHub Pages] Ani AI 評語已停用（需要 Anthropic API Key）
-// 請在 Claude.ai 開啟 Hub 使用完整 AI 功能
-function getAniComment() {
-  const boxes = document.querySelectorAll('#ani-box, #ani-comment, #ani-briefing, #ani-analysis');
-  boxes.forEach(el => {
-    if (!el) return;
-    el.innerHTML = `
-      <div style="padding:12px 14px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:8px;font-size:11px;line-height:1.8;color:#a5b4fc">
-        <div style="font-weight:700;margin-bottom:6px">📋 靜態規則提示（GitHub Pages 版）</div>
-        <div>① <strong>EL &lt; 20% NLV</strong> → 禁開 CSP / CC，只能 BPS（廣基指數）</div>
-        <div>② <strong>Delta 上限</strong>：單腿 &lt; 0.30，組合淨 Delta &lt; ±200</div>
-        <div>③ <strong>TIMS 壓測</strong>：個股 ±15%，廣基 +6% / −8%</div>
-        <div>④ <strong>IB 無 Margin Call</strong>，Excess Liquidity → 0 即自動砍倉</div>
-        <div>⑤ <strong>CC / CSP Roll</strong>：必須 Combo Order 同步執行，禁止分腿</div>
-        <div style="margin-top:8px;color:#6366f1">💡 完整 Ani AI 分析請在 Claude.ai 中使用</div>
-      </div>`;
-  });
-}
-function getAiBriefing() { getAniComment(); }
-function getAiComment()   { getAniComment(); }
-function getAiComment()   { getAniComment(); }
 
 // ── Hub Sync Receiver ──────────────────────────
 function loadSync() {
@@ -1006,6 +977,44 @@ window.addEventListener('storage', e => {
 
 loadSync();
 
+</script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
 </script>
 </body>
 </html>

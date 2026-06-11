@@ -460,64 +460,28 @@ function renderHeatmap() {
 // ════════════════════════════════
 // ANI COMMENT
 // ════════════════════════════════
-// [GitHub Pages] Ani AI 評語已停用（需要 Anthropic API Key）
-// 請在 Claude.ai 開啟 Hub 使用完整 AI 功能
-function getAniComment() {
-  const boxes = document.querySelectorAll('#ani-box, #ani-comment, #ani-briefing, #ani-analysis');
-  boxes.forEach(el => {
-    if (!el) return;
-    el.innerHTML = `
-      <div style="padding:12px 14px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:8px;font-size:11px;line-height:1.8;color:#a5b4fc">
-        <div style="font-weight:700;margin-bottom:6px">📋 靜態規則提示（GitHub Pages 版）</div>
-        <div>① <strong>EL &lt; 20% NLV</strong> → 禁開 CSP / CC，只能 BPS（廣基指數）</div>
-        <div>② <strong>Delta 上限</strong>：單腿 &lt; 0.30，組合淨 Delta &lt; ±200</div>
-        <div>③ <strong>TIMS 壓測</strong>：個股 ±15%，廣基 +6% / −8%</div>
-        <div>④ <strong>IB 無 Margin Call</strong>，Excess Liquidity → 0 即自動砍倉</div>
-        <div>⑤ <strong>CC / CSP Roll</strong>：必須 Combo Order 同步執行，禁止分腿</div>
-        <div style="margin-top:8px;color:#6366f1">💡 完整 Ani AI 分析請在 Claude.ai 中使用</div>
-      </div>`;
-  });
+async function getAniComment() {
+  const {tDelta, tTheta, tGamma, tVega, tPnl} = calcTotals();
+  const worstCase = calcStress(-15, -8);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:`你是 Ani，Allen 的選擇權策略顧問。分析 Portfolio Greeks：①Delta方向性評估②Theta收益效率③Gamma風險④最壞情境影響。中英混用，精簡直接。`,
+        messages:[{role:'user',content:`Portfolio Greeks 分析：淨Delta +${tDelta.toFixed(1)}（限制200），每日Theta +$${tTheta.toFixed(0)}（年化${(tTheta*365/251748*100).toFixed(1)}%），淨Gamma ${tGamma.toFixed(3)}（負值=賣方），淨Vega $${tVega.toFixed(0)}（IV每升1%損失）。TIMS最壞情境（個股-15%,指數-8%）P&L=${worstCase>=0?'+':''}$${worstCase.toLocaleString()}。NVDA CSP Delta 0.605超限。給3點評語：①整體Greeks健康度②最大風險點③建議調整方向。`}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    document.getElementById('ani-box').innerHTML = text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  } catch(e) {
+    document.getElementById('ani-box').textContent = '⚠️ AI 分析載入失敗';
+  }
 }
-// [GitHub Pages] Ani AI 評語已停用（需要 Anthropic API Key）
-// 請在 Claude.ai 開啟 Hub 使用完整 AI 功能
-function getAniComment() {
-  const boxes = document.querySelectorAll('#ani-box, #ani-comment, #ani-briefing, #ani-analysis');
-  boxes.forEach(el => {
-    if (!el) return;
-    el.innerHTML = `
-      <div style="padding:12px 14px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:8px;font-size:11px;line-height:1.8;color:#a5b4fc">
-        <div style="font-weight:700;margin-bottom:6px">📋 靜態規則提示（GitHub Pages 版）</div>
-        <div>① <strong>EL &lt; 20% NLV</strong> → 禁開 CSP / CC，只能 BPS（廣基指數）</div>
-        <div>② <strong>Delta 上限</strong>：單腿 &lt; 0.30，組合淨 Delta &lt; ±200</div>
-        <div>③ <strong>TIMS 壓測</strong>：個股 ±15%，廣基 +6% / −8%</div>
-        <div>④ <strong>IB 無 Margin Call</strong>，Excess Liquidity → 0 即自動砍倉</div>
-        <div>⑤ <strong>CC / CSP Roll</strong>：必須 Combo Order 同步執行，禁止分腿</div>
-        <div style="margin-top:8px;color:#6366f1">💡 完整 Ani AI 分析請在 Claude.ai 中使用</div>
-      </div>`;
-  });
-}
-function getAiBriefing() { getAniComment(); }
-// [GitHub Pages] Ani AI 評語已停用（需要 Anthropic API Key）
-// 請在 Claude.ai 開啟 Hub 使用完整 AI 功能
-function getAniComment() {
-  const boxes = document.querySelectorAll('#ani-box, #ani-comment, #ani-briefing, #ani-analysis');
-  boxes.forEach(el => {
-    if (!el) return;
-    el.innerHTML = `
-      <div style="padding:12px 14px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:8px;font-size:11px;line-height:1.8;color:#a5b4fc">
-        <div style="font-weight:700;margin-bottom:6px">📋 靜態規則提示（GitHub Pages 版）</div>
-        <div>① <strong>EL &lt; 20% NLV</strong> → 禁開 CSP / CC，只能 BPS（廣基指數）</div>
-        <div>② <strong>Delta 上限</strong>：單腿 &lt; 0.30，組合淨 Delta &lt; ±200</div>
-        <div>③ <strong>TIMS 壓測</strong>：個股 ±15%，廣基 +6% / −8%</div>
-        <div>④ <strong>IB 無 Margin Call</strong>，Excess Liquidity → 0 即自動砍倉</div>
-        <div>⑤ <strong>CC / CSP Roll</strong>：必須 Combo Order 同步執行，禁止分腿</div>
-        <div style="margin-top:8px;color:#6366f1">💡 完整 Ani AI 分析請在 Claude.ai 中使用</div>
-      </div>`;
-  });
-}
-function getAiBriefing() { getAniComment(); }
-function getAiComment()   { getAniComment(); }
-function getAiComment()   { getAniComment(); }
 
 // INIT
 renderGreekCards();
@@ -573,6 +537,44 @@ window.addEventListener('storage', e => {
 
 loadSync();
 
+</script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
 </script>
 </body>
 </html>

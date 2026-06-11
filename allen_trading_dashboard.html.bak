@@ -363,15 +363,77 @@ const USD_TWD = 31.68;
 // ─────────────────────────────────────────
 // IB DATA LOADER
 // ─────────────────────────────────────────
-// [GitHub Pages] AI Chat 已停用
-
-function quickAsk(q) { sendMessage(); }
-function loadDashboard() {
+async function loadDashboard() {
   const btn = document.getElementById('refresh-btn');
-  if (btn) {
-    btn.textContent = '請在 Claude.ai 使用';
-    setTimeout(() => { btn.textContent = '⟳ 更新數據'; }, 3000);
+  btn.disabled = true;
+  btn.textContent = '載入中...';
+
+  try {
+    // Call Claude with IBKR MCP to fetch account data
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `You are a data extraction assistant. Call the IBKR MCP tools to fetch account data, then return ONLY a JSON object with no markdown, no explanation.
+
+Call get_account_summary first, then get_account_positions.
+
+Return exactly this JSON structure:
+{
+  "summary": {
+    "nlv": <number in USD>,
+    "excess_liquidity": <number>,
+    "maintenance_margin": <number>,
+    "initial_margin": <number>,
+    "available_funds": <number>,
+    "leverage": <number>,
+    "cash_balance": <number>
+  },
+  "positions": [
+    {
+      "symbol": <string>,
+      "description": <string>,
+      "qty": <number, negative=short>,
+      "market_price": <number>,
+      "market_value": <number>,
+      "unrealized_pnl": <number>,
+      "asset_type": <"OPT"|"STK"|"FUT">
+    }
+  ]
+}`,
+        messages: [{ role: 'user', content: 'Fetch my IB account summary and all positions now. Return only JSON.' }],
+        mcp_servers: [{ type: 'url', url: 'https://api.ibkr.com/v1/api/mcp', name: 'ibkr' }]
+      })
+    });
+
+    const data = await response.json();
+
+    // Extract JSON from response
+    let jsonText = '';
+    for (const block of data.content) {
+      if (block.type === 'text') jsonText += block.text;
+    }
+
+    // Parse JSON (strip any markdown fences)
+    jsonText = jsonText.replace(/```json\n?|```\n?/g, '').trim();
+    const parsed = JSON.parse(jsonText);
+
+    accountData = parsed.summary;
+    positionsData = parsed.positions;
+
+    renderDashboard();
+    document.getElementById('update-time').textContent = '更新於 ' + new Date().toLocaleTimeString('zh-TW');
+
+  } catch (err) {
+    console.error('IB load error:', err);
+    // Fall back to demo data so UI is usable
+    loadDemoData();
   }
+
+  btn.disabled = false;
+  btn.textContent = '⟳ 更新數據';
 }
 
 function loadDemoData() {
@@ -704,7 +766,7 @@ async function sendMessage() {
 注意：Excess Liquidity ${accountData.excess_liquidity/accountData.nlv < 0.2 ? '< 20% → 只可開BPS廣基指數，禁止CSP/裸賣' : '正常 → 可評估新倉'}
 ` : '（請先點「更新數據」獲取最新帳戶狀態）';
 
-    const response = await fetch('https://DISABLED.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -804,6 +866,44 @@ window.addEventListener('storage', e => {
 
 loadSync();
 
+</script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
 </script>
 </body>
 </html>

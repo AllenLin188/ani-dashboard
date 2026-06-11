@@ -403,7 +403,7 @@ async function loadIBAccount() {
   btn.disabled = true; btn.textContent = '連線中...';
 
   try {
-    const res = await fetch('https://DISABLED.anthropic.com/v1/messages', {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -918,7 +918,7 @@ async function getAIComment(r) {
     : `Allen 正評估開倉：${r.symbol} ${r.strat} ${r.strike}，標的$${r.underlying}，${r.qty}口，DTE ${r.dte}天，收$${r.premium}/股，Delta ${r.delta}，IVR ${r.ivr}，TIMS保證金估$${Math.round(r.marginRequired)}，年化${r.annualRoi.toFixed(0)}%，OTM ${r.otmPct.toFixed(1)}%。帳戶EL $${Math.round(STATE.excess_liquidity)}。風控結果：${r.verdict}。給3行精簡評語（中英混用）：①策略品質評分，②最大風險點，③操作建議。`;
 
   try {
-    const res = await fetch('https://DISABLED.anthropic.com/v1/messages', {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -974,6 +974,44 @@ window.addEventListener('storage', e => {
 // Try hub sync first; fall back to local STATE defaults
 if (!loadSync()) updateAccountStrip();
 
+</script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
 </script>
 </body>
 </html>
