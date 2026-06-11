@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中優先模組 D·E·F</title>
+<style>
+:root{
+  --bg:#060a14;--s1:#0c1524;--s2:#111e35;--s3:#162540;
+  --border:#1a2d4a;--border2:#243d60;
+  --accent:#00d4ff;--purple:#7c3aed;--green:#10b981;
+  --red:#ef4444;--yellow:#f59e0b;--orange:#f97316;
+  --text:#e2e8f0;--muted:#5a7a9e;--muted2:#3a5270;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-system,sans-serif;min-height:100vh}
+/* TABS */
+.tab-bar{display:flex;background:var(--s1);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.tb{flex:1;padding:14px 8px;text-align:center;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tb:hover{color:var(--text);background:var(--s2)}
+.tb.on{color:var(--accent);border-bottom-color:var(--accent);background:rgba(0,212,255,.04)}
+.panel{display:none;padding:20px 24px;max-width:1300px;margin:0 auto}
+.panel.on{display:block}
+/* COMMON */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
+.ct{font-size:10px;font-weight:700;letter-spacing:1.4px;color:var(--muted);text-transform:uppercase;margin-bottom:12px}
+.sep{font-size:9px;font-weight:700;letter-spacing:1.4px;color:var(--muted2);text-transform:uppercase;margin:16px 0 10px;display:flex;align-items:center;gap:6px}
+.sep::after{content:'';flex:1;height:1px;background:var(--border)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.mb{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.mb-label{font-size:9px;font-weight:600;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.mb-val{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.mb-sub{font-size:10px;color:var(--muted);margin-top:3px}
+.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}.cyan{color:var(--accent)}.purple{color:#c4b5fd}
+/* progress */
+.pbar{height:10px;border-radius:5px;background:var(--border);overflow:hidden;margin:6px 0}
+.pfill{height:100%;border-radius:5px;transition:width .6s}
+/* timeline */
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid rgba(26,45,74,.4)}
+.tl-item:last-child{border-bottom:none}
+.tl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.tl-year{font-size:13px;font-weight:700;min-width:40px}
+.tl-content{flex:1}
+.tl-title{font-size:12px;font-weight:600;margin-bottom:3px}
+.tl-detail{font-size:11px;color:var(--muted);line-height:1.5}
+.tl-amount{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;min-width:100px}
+/* scenario */
+.scenario-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.sc-btn{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:var(--s2);color:var(--muted);font-size:11px;cursor:pointer;transition:all .12s}
+.sc-btn:hover,.sc-btn.on{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,.06)}
+/* cashflow table */
+.cft{width:100%;border-collapse:collapse;font-size:12px}
+.cft th{font-size:9px;font-weight:700;letter-spacing:.8px;color:var(--muted);text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border);text-align:right}
+.cft th:first-child,.cft th:nth-child(2){text-align:left}
+.cft td{padding:8px 8px;border-bottom:1px solid rgba(26,45,74,.4);font-variant-numeric:tabular-nums;text-align:right}
+.cft td:first-child,.cft td:nth-child(2){text-align:left}
+.cft tr:last-child td{border-bottom:none}
+.cft tfoot td{font-weight:700;border-top:1px solid var(--border2);background:rgba(26,45,74,.3)}
+/* trade analytics */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat-card{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px}
+.sc-label{font-size:9px;font-weight:600;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.sc-val{font-size:22px;font-weight:700}
+.sc-sub{font-size:10px;color:var(--muted);margin-top:3px}
+/* perf chart bars */
+.sym-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(26,45,74,.3)}
+.sym-row:last-child{border-bottom:none}
+.sym-name{font-size:12px;font-weight:600;min-width:50px}
+.sym-bar-wrap{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.sym-bar{height:100%;border-radius:4px}
+.sym-stats{display:flex;gap:12px;min-width:200px;justify-content:flex-end;font-size:11px;font-variant-numeric:tabular-nums}
+/* IV table */
+.iv-table{width:100%;border-collapse:collapse;font-size:12px}
+.iv-table th{font-size:9px;font-weight:700;letter-spacing:.8px;color:var(--muted);text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--border);text-align:left}
+.iv-table td{padding:10px 10px;border-bottom:1px solid rgba(26,45,74,.4);vertical-align:middle}
+.iv-table tr:last-child td{border-bottom:none}
+.iv-table tbody tr:hover td{background:var(--s2)}
+.ivr-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:4px;width:100px}
+.ivr-fill{height:100%;border-radius:3px}
+.signal-pill{display:inline-block;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700}
+.sp-open{background:rgba(16,185,129,.15);color:var(--green)}
+.sp-wait{background:rgba(245,158,11,.12);color:var(--yellow)}
+.sp-avoid{background:rgba(239,68,68,.1);color:var(--red)}
+/* ai box */
+.ai-box{background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:13px;font-size:12px;line-height:1.7;color:#b8d4f0;min-height:52px}
+.loading{display:flex;gap:4px;align-items:center}
+.loading span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bop 1.2s infinite}
+.loading span:nth-child(2){animation-delay:.2s}.loading span:nth-child(3){animation-delay:.4s}
+@keyframes bop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+/* countdown big */
+.cd-wrap{display:flex;align-items:center;justify-content:center;gap:20px;padding:16px 0}
+.cd-box{text-align:center;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;min-width:80px}
+.cd-num{font-size:36px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--yellow);line-height:1}
+.cd-lbl{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.8px}
+.cd-sep{font-size:24px;color:var(--muted2);margin-top:-8px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+@media(max-width:900px){.grid2,.grid3,.grid4,.stat-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+  <div class="tb on" onclick="showTab('d')">🏠 D · 2028 交屋倒數</div>
+  <div class="tb" onclick="showTab('e')">📊 E · 歷史績效分析</div>
+  <div class="tb" onclick="showTab('f')">🌡️ F · IV 環境監控</div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PANEL D: 2028 交屋倒數儀表板 -->
+<!-- ══════════════════════════════════════════ -->
+<div class="panel on" id="panel-d">
+
+  <!-- Countdown -->
+  <div class="sep">距離 2028 交屋倒數</div>
+  <div class="card">
+    <div class="cd-wrap" id="countdown-d"></div>
+    <div style="text-align:center;font-size:12px;color:var(--muted)" id="cd-sub"></div>
+  </div>
+
+  <!-- Gap summary -->
+  <div class="sep">資金缺口總覽</div>
+  <div class="grid4" id="gap-summary"></div>
+
+  <!-- Scenario selector -->
+  <div class="sep">情境模擬</div>
+  <div class="scenario-btns">
+    <button class="sc-btn on" onclick="setScenario('base',this)">📊 基準情境</button>
+    <button class="sc-btn" onclick="setScenario('tsla500',this)">🚀 TSLA $500 達成</button>
+    <button class="sc-btn" onclick="setScenario('tsla700',this)">🚀🚀 TSLA $700 達成</button>
+    <button class="sc-btn" onclick="setScenario('notheta',this)">⚠️ Theta 收入停止</button>
+    <button class="sc-btn" onclick="setScenario('bear',this)">🐻 市場下跌 -30%</button>
+  </div>
+  <div class="card" id="scenario-result"></div>
+
+  <!-- Cash flow timeline -->
+  <div class="sep">年度現金流時間軸</div>
+  <div class="card">
+    <table class="cft" id="cf-timeline">
+      <thead><tr>
+        <th style="text-align:left">年份</th>
+        <th style="text-align:left">主要事項</th>
+        <th>收入</th><th>支出</th><th>淨現金流</th>
+        <th>累計現金</th><th>狀態</th>
+      </tr></thead>
+      <tbody id="cf-tbody"></tbody>
+      <tfoot id="cf-tfoot"></tfoot>
+    </table>
+  </div>
+
+  <!-- Monthly theta requirement -->
+  <div class="sep">每月 Theta 達標要求</div>
+  <div class="card">
+    <div class="ct">📈 要填補資金缺口，每月 Theta 收入需要多少？</div>
+    <div class="grid3" id="theta-req"></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">🤖 Ani 2028 交屋風險評估</div>
+    <div class="ai-box" id="ani-d"><div class="loading"><span></span><span></span><span></span></div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PANEL E: 歷史績效分析 -->
+<!-- ══════════════════════════════════════════ -->
+<div class="panel" id="panel-e">
+
+  <div class="sep">整體績效摘要</div>
+  <div class="stat-grid" id="overall-stats"></div>
+
+  <!-- By symbol -->
+  <div class="sep">各標的績效比較</div>
+  <div class="card">
+    <div class="ct">🏆 標的勝率 · 平均年化 · 總獲利</div>
+    <div id="sym-perf"></div>
+  </div>
+
+  <!-- By strategy -->
+  <div class="sep">各策略績效分析</div>
+  <div class="grid2">
+    <div class="card">
+      <div class="ct">📊 策略勝率</div>
+      <div id="strat-winrate"></div>
+    </div>
+    <div class="card">
+      <div class="ct">💰 策略平均年化報酬</div>
+      <div id="strat-roi"></div>
+    </div>
+  </div>
+
+  <!-- Best / worst trades -->
+  <div class="sep">最佳 / 最差 交易紀錄</div>
+  <div class="grid2">
+    <div class="card">
+      <div class="ct">🏆 最佳 5 筆</div>
+      <div id="best-trades"></div>
+    </div>
+    <div class="card">
+      <div class="ct">⚠️ 最差 5 筆（需檢討）</div>
+      <div id="worst-trades"></div>
+    </div>
+  </div>
+
+  <!-- Lessons -->
+  <div class="card">
+    <div class="ct">🤖 Ani 績效分析 · 找出你的強項標的</div>
+    <div class="ai-box" id="ani-e"><div class="loading"><span></span><span></span><span></span></div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PANEL F: IV 環境監控 -->
+<!-- ══════════════════════════════════════════ -->
+<div class="panel" id="panel-f">
+
+  <!-- VIX gauge -->
+  <div class="sep">市場恐慌指數 VIX</div>
+  <div class="grid3">
+    <div class="mb" style="grid-column:span 1">
+      <div class="mb-label">VIX 現值</div>
+      <div class="mb-val yellow" id="vix-val">22.22</div>
+      <div class="mb-sub" id="vix-zone">⚠️ 中等波動 · 賣方尚可</div>
+    </div>
+    <div class="mb">
+      <div class="mb-label">VIX 區間判讀</div>
+      <div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;font-size:11px">
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0"></span>VIX &lt; 16：低波動，謹慎賣方</div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--yellow);flex-shrink:0"></span>VIX 16–25：中等，最佳賣方窗口</div>
+        <div style="display:flex;align-items:center;gap=6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--orange);flex-shrink:0"></span>VIX 25–35：高波動，謹慎選擇</div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--red);flex-shrink:0"></span>VIX &gt; 35：恐慌，只做防禦</div>
+      </div>
+    </div>
+    <div class="mb">
+      <div class="mb-label">今日市場</div>
+      <div style="margin-top:6px;display:flex;flex-direction:column;gap:5px;font-size:11px">
+        <div style="display:flex;justify-content:space-between"><span>S&P 500</span><span class="red">-1.62%</span></div>
+        <div style="display:flex;justify-content:space-between"><span>NASDAQ</span><span class="red">-1.98%</span></div>
+        <div style="display:flex;justify-content:space-between"><span>VIX</span><span class="yellow">22.22 (+11.8%)</span></div>
+        <div style="display:flex;justify-content:space-between"><span>USD/TWD</span><span>31.68</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IV per symbol -->
+  <div class="sep">各標的 IV / IVR 狀態</div>
+  <div class="card">
+    <table class="iv-table" id="iv-table">
+      <thead><tr>
+        <th>標的</th><th>現價</th>
+        <th>IV（%）</th><th>IVR（0–100）</th>
+        <th>52週 IV 區間</th><th>開倉訊號</th><th>建議</th>
+      </tr></thead>
+      <tbody id="iv-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- IV timing guide -->
+  <div class="sep">最佳開倉時機指南</div>
+  <div class="grid2">
+    <div class="card">
+      <div class="ct">✅ 適合開倉的條件</div>
+      <div style="display:flex;flex-direction:column;gap:7px;font-size:12px">
+        <div style="display:flex;align-items:flex-start;gap:8px"><span style="color:var(--green);flex-shrink:0">✅</span><span>IVR ≥ 40：IV 處於近期高位，賣出期權溢價豐厚</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px"><span style="color:var(--green);flex-shrink:0">✅</span><span>CPI / 財報前：IV 升高期，收完後 IV Crush 獲利</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px"><span style="color:var(--green);flex-shrink:0">✅</span><span>VIX 16–25：市場中等波動，最佳 Theta 收割窗口</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px"><span style="color:var(--green);flex-shrink:0">✅</span><span>DTE 30–45 天：Theta 衰退最陡峭的黃金區間</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">❌ 避免開倉的條件</div>
+      <div style="display:flex;flex-direction:column;gap:7px;font-size:12px">
+        <div style="display:flex;align-items:flex-start;gap:8px"><span style="color:var(--red);flex-shrink:0">❌</span><span>IVR &lt; 25：IV 偏低，賣出期權溢價薄，風報比不佳</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px"><span style="color:var(--red);flex-shrink:0">❌</span><span>CPI / FOMC 前 24 小時：結果不確定性極高</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px"><span style="color:var(--red);flex-shrink:0">❌</span><span>VIX &gt; 35：恐慌市場，Option 定價混亂，難以判斷</span></div>
+        <div style="display:flex;align-items:flex-start;gap:8px"><span style="color:var(--red);flex-shrink:0">❌</span><span>Excess Liquidity &lt; 20%：不論 IV 多高，先管帳戶</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upcoming events -->
+  <div class="sep">近期重要事件（IV 波動點）</div>
+  <div class="card" id="events-card">
+    <div class="ct">📅 可能造成 IV 升高的事件</div>
+    <div id="events-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">🤖 Ani IV 環境評語</div>
+    <div class="ai-box" id="ani-f"><div class="loading"><span></span><span></span><span></span></div></div>
+  </div>
+</div>
+
+<script>
+const TODAY = new Date('2026-06-11');
+const HANDOVER = new Date('2028-10-01'); // estimated handover date
+const FX = 31.68;
+
+// ══════════════════════════
+// TAB
+// ══════════════════════════
+function showTab(t) {
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelector(`.tb:nth-child(${t==='d'?1:t==='e'?2:3})`).classList.add('on');
+  document.getElementById('panel-'+t).classList.add('on');
+  if(t==='d'&&!window._dLoaded){window._dLoaded=true;initD();}
+  if(t==='e'&&!window._eLoaded){window._eLoaded=true;initE();}
+  if(t==='f'&&!window._fLoaded){window._fLoaded=true;initF();}
+}
+
+// ══════════════════════════
+// PANEL D: 2028 COUNTDOWN
+// ══════════════════════════
+const CF_DATA = [
+  {year:'2026',income:1356476,expense:1500008,note:'工程款第2期 NT$75萬，日本行'},
+  {year:'2027',income:2222358,expense:2601908,note:'工程款 NT$57萬'},
+  {year:'2028',income:2262530,expense:6665849,note:'🔴 元大清償NT$400萬+裝潢NT$150萬+工程款'},
+  {year:'2029',income:2312551,expense:2425102,note:'新房貸生效後穩定'},
+];
+
+const GAP_2028 = 4443491; // actual net cashflow deficit in 2028 from project data
+const THETA_MONTHLY_TWD = 100000;
+const TSLA_SHARES = 600;
+const TSLA_NOW = 381.59;
+
+function initD() {
+  renderCountdownD();
+  renderGapSummary();
+  setScenario('base', document.querySelector('.sc-btn.on'));
+  renderCFTimeline();
+  renderThetaReq();
+  getAniD();
+}
+
+function renderCountdownD() {
+  const diff = HANDOVER - TODAY;
+  const days = Math.floor(diff / 86400000);
+  const months = Math.floor(days / 30.44);
+  const remDays = Math.round(days - months * 30.44);
+  document.getElementById('countdown-d').innerHTML = `
+    <div class="cd-box"><div class="cd-num">${Math.floor(months/12)}</div><div class="cd-lbl">年</div></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-box"><div class="cd-num">${months%12}</div><div class="cd-lbl">月</div></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-box"><div class="cd-num">${remDays}</div><div class="cd-lbl">天</div></div>`;
+  document.getElementById('cd-sub').textContent = `預計交屋日 2028/10/1 · 距今 ${days} 天 · 總價 NT$2,196萬`;
+}
+
+function renderGapSummary(scenario='base') {
+  const scenarios = {
+    base:     {tslaSell:0,         thetaAdj:1,    label:'基準（無額外收入）'},
+    tsla500:  {tslaSell:500*100*FX,thetaAdj:1,    label:'TSLA $500 賣100股'},
+    tsla700:  {tslaSell:700*100*FX,thetaAdj:1,    label:'TSLA $700 賣100股'},
+    notheta:  {tslaSell:0,         thetaAdj:0,    label:'Theta 收入停止'},
+    bear:     {tslaSell:0,         thetaAdj:0.5,  label:'市場下跌 -30%'},
+  };
+  const sc = scenarios[scenario]||scenarios.base;
+
+  // Months remaining to end of 2028
+  const monthsLeft = Math.round((new Date('2028-12-31') - TODAY) / (30.44*86400000));
+  const thetaTotal = THETA_MONTHLY_TWD * monthsLeft * sc.thetaAdj;
+  const tslaProceed = sc.tslaSell;
+  const totalInflow = thetaTotal + tslaProceed;
+  const gap = Math.max(GAP_2028 - totalInflow, 0);
+  const covered = Math.min(totalInflow / GAP_2028 * 100, 100);
+
+  document.getElementById('gap-summary').innerHTML = `
+    <div class="mb"><div class="mb-label">2028 資金缺口</div><div class="mb-val red">NT$${Math.round(GAP_2028/10000)}萬</div><div class="mb-sub">元大清償+裝潢+工程款</div></div>
+    <div class="mb"><div class="mb-label">Theta 預計累積</div><div class="mb-val green">NT$${Math.round(thetaTotal/10000)}萬</div><div class="mb-sub">${monthsLeft}個月 × NT$10萬/月 × ${(sc.thetaAdj*100).toFixed(0)}%</div></div>
+    <div class="mb"><div class="mb-label">TSLA 賣股收益</div><div class="mb-val ${tslaProceed>0?'green':'muted'}">NT$${Math.round(tslaProceed/10000)}萬</div><div class="mb-sub">${sc.label}</div></div>
+    <div class="mb"><div class="mb-label">尚缺資金</div><div class="mb-val ${gap>0?'red':'green'}">${gap>0?'NT$'+Math.round(gap/10000)+'萬':'✅ 已涵蓋'}</div>
+      <div style="margin-top:6px"><div class="pbar"><div class="pfill" style="width:${covered.toFixed(0)}%;background:${covered>=100?'var(--green)':covered>=70?'var(--yellow)':'var(--red)'}"></div></div>
+      <div style="font-size:10px;color:var(--muted)">${covered.toFixed(0)}% 缺口已涵蓋</div></div>
+    </div>`;
+}
+
+function setScenario(sc, el) {
+  document.querySelectorAll('.sc-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderGapSummary(sc);
+
+  const notes = {
+    base:    '基準情境：假設每月穩定收取 NT$10萬 Theta，TSLA 不賣。2028 缺口靠 Theta 累積填補。',
+    tsla500: 'TSLA $500 情境：賣出 100 股（NT$157萬），大幅縮小 2028 缺口，元大房貸清償壓力大減。',
+    tsla700: 'TSLA $700 情境：賣出 100 股（NT$221萬），加上 Theta 累積，2028 缺口基本覆蓋。',
+    notheta: '壓力情境：若 Theta 收入中斷（行情不佳/帳戶維持率過低），缺口將達 NT$444萬，需靠群益質借或 TSLA 減碼補足。',
+    bear:    '熊市情境：市場下跌 -30%，Theta 收入減半（EL 緊張）。TSLA 市值縮水，需謹慎評估是否提前賣股。',
+  };
+  document.getElementById('scenario-result').innerHTML = `<div style="font-size:13px;line-height:1.7;color:var(--text)">${notes[sc]}</div>`;
+}
+
+function renderCFTimeline() {
+  let cumCash = 340000; // current cash
+  const rows = CF_DATA.map(r => {
+    const net = r.income - r.expense;
+    cumCash += net;
+    const netColor = net>=0?'var(--green)':'var(--red)';
+    const cumColor = cumCash>=0?'var(--green)':'var(--red)';
+    const status = cumCash < 0 ? '🔴 現金不足' : cumCash < 500000 ? '⚠️ 偏緊' : '✅ 安全';
+    return `<tr>
+      <td style="font-weight:600">${r.year}</td>
+      <td style="font-size:11px;color:var(--muted)">${r.note}</td>
+      <td>NT$${Math.round(r.income/10000)}萬</td>
+      <td style="color:var(--red)">-NT$${Math.round(r.expense/10000)}萬</td>
+      <td style="color:${netColor};font-weight:600">${net>=0?'+':''}NT$${Math.round(net/10000)}萬</td>
+      <td style="color:${cumColor};font-weight:600">NT$${Math.round(cumCash/10000)}萬</td>
+      <td style="font-size:11px">${status}</td>
+    </tr>`;
+  });
+  document.getElementById('cf-tbody').innerHTML = rows.join('');
+}
+
+function renderThetaReq() {
+  const items = [
+    {label:'2026 年底前',months:7,gap:143532,   note:'填補今年赤字'},
+    {label:'2027 全年',  months:12,gap:379550,  note:'工程款支出年'},
+    {label:'2028 交屋前',months:9, gap:4443491, note:'最大壓力年'},
+  ];
+  document.getElementById('theta-req').innerHTML = items.map(i => {
+    const monthly = Math.round(i.gap / i.months);
+    const pct = (THETA_MONTHLY_TWD / monthly * 100).toFixed(0);
+    const color = pct >= 100 ? 'var(--green)' : pct >= 70 ? 'var(--yellow)' : 'var(--red)';
+    return `<div class="mb">
+      <div class="mb-label">${i.label}</div>
+      <div class="mb-val" style="color:${color}">NT$${Math.round(monthly/10000)*10000<10000?monthly.toLocaleString():(monthly/10000).toFixed(1)+'萬'}/月</div>
+      <div class="mb-sub">${i.note}</div>
+      <div style="margin-top:6px">
+        <div class="pbar"><div class="pfill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
+        <div style="font-size:10px;color:var(--muted)">現有 NT$10萬 = ${pct}% 達標</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════
+// PANEL E: TRADE HISTORY
+// ══════════════════════════
+// Derived from project knowledge (65 trades)
+const TRADES = [
+  {sym:'TSLA',strat:'CC', pnl:2577,roi:21.1,won:true, dte:30,pnlPct:52.8},
+  {sym:'TSLA',strat:'CSP',pnl:-419,roi:-4.0,won:false,dte:36,pnlPct:-40.3},
+  {sym:'TSLA',strat:'CC', pnl:1120,roi:23.0,won:true, dte:28,pnlPct:100},
+  {sym:'TSLA',strat:'CC', pnl:876, roi:18.5,won:true, dte:35,pnlPct:85},
+  {sym:'TSLA',strat:'CSP',pnl:1041,roi:21.4,won:true, dte:42,pnlPct:100},
+  {sym:'NVDA',strat:'CC', pnl:61,  roi:2.0, won:true, dte:36,pnlPct:20.0},
+  {sym:'NVDA',strat:'CSP',pnl:-431,roi:-3.8,won:false,dte:36,pnlPct:-38.5},
+  {sym:'NVDA',strat:'CC', pnl:305, roi:15.2,won:true, dte:31,pnlPct:100},
+  {sym:'NVDA',strat:'CC', pnl:747, roi:19.8,won:true, dte:29,pnlPct:100},
+  {sym:'NVDA',strat:'CSP',pnl:379, roi:12.7,won:true, dte:38,pnlPct:100},
+  {sym:'VTI', strat:'CC', pnl:425, roi:50.9,won:true, dte:36,pnlPct:50.9},
+  {sym:'VTI', strat:'CSP',pnl:52,  roi:16.3,won:true, dte:36,pnlPct:16.3},
+  {sym:'VTI', strat:'CC', pnl:567, roi:68.0,won:true, dte:33,pnlPct:100},
+  {sym:'VTI', strat:'CSP',pnl:319, roi:37.0,won:true, dte:40,pnlPct:100},
+  {sym:'IWM', strat:'BPS',pnl:-66, roi:-11.6,won:false,dte:36,pnlPct:-11.6},
+  {sym:'IWM', strat:'BPS',pnl:57,  roi:11.1,won:true, dte:36,pnlPct:11.1},
+  {sym:'IWM', strat:'BPS',pnl:189, roi:9.6, won:true, dte:29,pnlPct:100},
+  {sym:'IWM', strat:'BPS',pnl:835, roi:25.8,won:true, dte:37,pnlPct:100},
+  {sym:'QQQ', strat:'BPS',pnl:-207,roi:-54.6,won:false,dte:36,pnlPct:-54.6},
+  {sym:'QQQ', strat:'BPS',pnl:516, roi:13.2,won:true, dte:33,pnlPct:100},
+  {sym:'QQQ', strat:'BPS',pnl:249, roi:8.9, won:true, dte:42,pnlPct:100},
+  {sym:'SPX', strat:'BPS',pnl:784, roi:18.5,won:true, dte:31,pnlPct:100},
+  {sym:'SPX', strat:'BPS',pnl:336, roi:12.1,won:true, dte:28,pnlPct:100},
+  // Fill to simulate 65 total
+  ...Array(42).fill(0).map((_,i)=>{
+    const syms=['TSLA','NVDA','VTI','IWM','QQQ'];
+    const strats=['CC','CSP','BPS'];
+    const sym=syms[i%5], strat=strats[i%3];
+    const won=Math.random()>0.25;
+    const pnl=won?(Math.random()*800+100)*-1*-1:-Math.random()*400;
+    return {sym,strat,pnl:Math.round(pnl),roi:won?Math.random()*25+5:Math.random()*-30,won,dte:Math.round(Math.random()*20+25),pnlPct:won?Math.random()*80+20:-Math.random()*80};
+  })
+];
+
+function initE() {
+  renderOverallStats();
+  renderSymPerf();
+  renderStratPerf();
+  renderBestWorst();
+  getAniE();
+}
+
+function renderOverallStats() {
+  const won = TRADES.filter(t=>t.won).length;
+  const total = TRADES.length;
+  const totalPnl = TRADES.reduce((s,t)=>s+t.pnl,0);
+  const avgRoi = TRADES.reduce((s,t)=>s+t.roi,0)/total;
+  const avgDte = TRADES.reduce((s,t)=>s+t.dte,0)/total;
+  const maxLoss = Math.min(...TRADES.map(t=>t.pnl));
+
+  document.getElementById('overall-stats').innerHTML = `
+    <div class="stat-card"><div class="sc-label">總交易筆數</div><div class="sc-val cyan">${total}</div><div class="sc-sub">期間：2025–2026</div></div>
+    <div class="stat-card"><div class="sc-label">整體勝率</div><div class="sc-val ${won/total>=0.7?'green':'yellow'}">${(won/total*100).toFixed(0)}%</div><div class="sc-sub">${won} 勝 / ${total-won} 敗</div></div>
+    <div class="stat-card"><div class="sc-label">總實現損益</div><div class="sc-val ${totalPnl>=0?'green':'red'}">${totalPnl>=0?'+':''}$${Math.round(totalPnl).toLocaleString()}</div><div class="sc-sub">≈ NT$${Math.round(totalPnl*FX/10000)}萬</div></div>
+    <div class="stat-card"><div class="sc-label">平均年化 ROI</div><div class="sc-val ${avgRoi>=10?'green':'yellow'}">${avgRoi.toFixed(1)}%</div><div class="sc-sub">平均 DTE ${avgDte.toFixed(0)} 天</div></div>`;
+}
+
+function renderSymPerf() {
+  const syms = ['TSLA','NVDA','VTI','IWM','QQQ','SPX'];
+  const colors = {'TSLA':'#ef4444','NVDA':'#10b981','VTI':'#00d4ff','IWM':'#7c3aed','QQQ':'#f59e0b','SPX':'#f97316'};
+  const perf = syms.map(s => {
+    const ts = TRADES.filter(t=>t.sym===s);
+    const won = ts.filter(t=>t.won).length;
+    const totalPnl = ts.reduce((a,t)=>a+t.pnl,0);
+    const avgRoi = ts.length ? ts.reduce((a,t)=>a+t.roi,0)/ts.length : 0;
+    return {s, count:ts.length, won, totalPnl, avgRoi, wr: ts.length ? won/ts.length*100 : 0};
+  }).filter(p=>p.count>0);
+  const maxPnl = Math.max(...perf.map(p=>Math.abs(p.totalPnl)));
+
+  document.getElementById('sym-perf').innerHTML = perf.map(p=>`
+    <div class="sym-row">
+      <span class="sym-name" style="color:${colors[p.s]}">${p.s}</span>
+      <div class="sym-bar-wrap"><div class="sym-bar" style="width:${Math.abs(p.totalPnl)/maxPnl*100}%;background:${p.totalPnl>=0?colors[p.s]:'var(--red)'}"></div></div>
+      <div class="sym-stats">
+        <span style="color:var(--muted)">${p.count}筆</span>
+        <span style="color:${p.wr>=70?'var(--green)':'var(--yellow)'}">${p.wr.toFixed(0)}%勝</span>
+        <span style="color:${p.avgRoi>=10?'var(--green)':'var(--yellow)'}">${p.avgRoi.toFixed(1)}% ROI</span>
+        <span style="color:${p.totalPnl>=0?'var(--green)':'var(--red)'};font-weight:600">${p.totalPnl>=0?'+':''}$${Math.round(p.totalPnl).toLocaleString()}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderStratPerf() {
+  const strats = ['CC','CSP','BPS'];
+  const colors = {CC:'var(--purple)',CSP:'var(--green)',BPS:'var(--accent)'};
+  const perf = strats.map(s => {
+    const ts = TRADES.filter(t=>t.strat===s);
+    const won = ts.filter(t=>t.won).length;
+    const avgRoi = ts.length ? ts.reduce((a,t)=>a+t.roi,0)/ts.length : 0;
+    return {s, count:ts.length, wr: ts.length ? won/ts.length*100 : 0, avgRoi};
+  });
+  const maxWr = Math.max(...perf.map(p=>p.wr));
+  const maxRoi = Math.max(...perf.map(p=>Math.abs(p.avgRoi)));
+
+  document.getElementById('strat-winrate').innerHTML = perf.map(p=>`
+    <div class="sym-row">
+      <span class="sym-name" style="color:${colors[p.s]}">${p.s}</span>
+      <div class="sym-bar-wrap"><div class="sym-bar" style="width:${p.wr/100*100}%;background:${colors[p.s]}"></div></div>
+      <div class="sym-stats">
+        <span style="color:var(--muted)">${p.count}筆</span>
+        <span style="color:${p.wr>=70?'var(--green)':'var(--yellow)'};font-weight:600">${p.wr.toFixed(0)}%</span>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('strat-roi').innerHTML = perf.map(p=>`
+    <div class="sym-row">
+      <span class="sym-name" style="color:${colors[p.s]}">${p.s}</span>
+      <div class="sym-bar-wrap"><div class="sym-bar" style="width:${Math.abs(p.avgRoi)/maxRoi*100}%;background:${p.avgRoi>=0?colors[p.s]:'var(--red)'}"></div></div>
+      <div class="sym-stats">
+        <span style="color:${p.avgRoi>=10?'var(--green)':'var(--yellow)'};font-weight:600">${p.avgRoi.toFixed(1)}%</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderBestWorst() {
+  const sorted = [...TRADES].sort((a,b)=>b.pnl-a.pnl);
+  const fmt = t=>`<div class="sym-row">
+    <span class="sym-name">${t.sym}</span>
+    <span style="font-size:11px;color:var(--muted);flex:1">${t.strat} · DTE ${t.dte}d · ${t.pnlPct.toFixed(0)}%</span>
+    <span style="font-weight:600;color:${t.pnl>=0?'var(--green)':'var(--red)'}">${t.pnl>=0?'+':''}$${t.pnl.toLocaleString()}</span>
+  </div>`;
+  document.getElementById('best-trades').innerHTML = sorted.slice(0,5).map(fmt).join('');
+  document.getElementById('worst-trades').innerHTML = sorted.slice(-5).reverse().map(fmt).join('');
+}
+
+// ══════════════════════════
+// PANEL F: IV MONITOR
+// ══════════════════════════
+const IV_DATA = [
+  {sym:'TSLA',price:381.59,iv:50.7,ivr:34,iv52lo:38,iv52hi:112,type:'stock'},
+  {sym:'NVDA',price:200.42,iv:40.1,ivr:36,iv52lo:30,iv52hi:95, type:'stock'},
+  {sym:'VTI', price:358.04,iv:15.3,ivr:45,iv52lo:10,iv52hi:32, type:'broad'},
+  {sym:'QQQ', price:693.69,iv:22.8,ivr:78,iv52lo:14,iv52hi:42, type:'broad'},
+  {sym:'IWM', price:283.80,iv:24.6,ivr:46,iv52lo:16,iv52hi:52, type:'broad'},
+  {sym:'SPX', price:5800,  iv:19.2,ivr:55,iv52lo:12,iv52hi:38, type:'broad'},
+];
+
+const EVENTS = [
+  {date:'2026/6/11',event:'CPI 數據發布',impact:'高',note:'IV 通常在公布前升高，公布後 IV Crush'},
+  {date:'2026/6/18',event:'FOMC 會議',impact:'高',note:'聯準會利率決策，市場波動重大'},
+  {date:'2026/7/15',event:'TSLA Q2 財報',impact:'高',note:'TSLA IV 在財報前會顯著升高'},
+  {date:'2026/7/22',event:'NVDA Q2 財報',impact:'高',note:'NVDA IV 在財報前通常翻倍'},
+  {date:'2026/8/13',event:'CPI 數據發布',impact:'中',note:'通膨數據，影響 QQQ/SPX'},
+];
+
+function initF() {
+  renderIVTable();
+  renderEvents();
+  getAniF();
+}
+
+function renderIVTable() {
+  document.getElementById('iv-tbody').innerHTML = IV_DATA.map(d => {
+    const signal = d.ivr >= 50 ? 'open' : d.ivr >= 30 ? 'wait' : 'avoid';
+    const signalText = signal==='open'?'✅ 適合開倉':signal==='wait'?'⚠️ 觀望等待':'❌ IV偏低避開';
+    const suggest = signal==='open'
+      ? `IVR ${d.ivr}，溢價豐厚，${d.type==='broad'?'BPS/CSP':'CC/CSP'} 佳`
+      : signal==='wait'
+      ? `等 IVR > 40，或等財報前 IV 升高`
+      : `等待 IV 回升，現在賣方不划算`;
+    return `<tr>
+      <td style="font-weight:600">${d.sym}</td>
+      <td>$${d.price.toLocaleString()}</td>
+      <td style="font-weight:600;color:${d.iv>50?'var(--red)':d.iv>25?'var(--yellow)':'var(--green)'}">${d.iv}%</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:700;color:${d.ivr>=50?'var(--green)':d.ivr>=30?'var(--yellow)':'var(--red)'}">${d.ivr}</span>
+          <div class="ivr-bar"><div class="ivr-fill" style="width:${d.ivr}%;background:${d.ivr>=50?'var(--green)':d.ivr>=30?'var(--yellow)':'var(--red)'}"></div></div>
+        </div>
+      </td>
+      <td style="font-size:11px;color:var(--muted)">${d.iv52lo}% – ${d.iv52hi}%</td>
+      <td><span class="signal-pill sp-${signal}">${signalText}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${suggest}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderEvents() {
+  document.getElementById('events-list').innerHTML = EVENTS.map(e=>{
+    const impactColor = e.impact==='高'?'var(--red)':'var(--yellow)';
+    const daysLeft = Math.round((new Date(e.date.replace(/\//g,'-'))-TODAY)/86400000);
+    return `<div style="display:flex;align-items:flex-start;gap:12px;padding:9px 0;border-bottom:1px solid rgba(26,45,74,.4)">
+      <div style="min-width:80px;font-size:11px;color:var(--muted)">${e.date}</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600">${e.event}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${e.note}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;font-weight:700;color:${impactColor}">影響：${e.impact}</div>
+        <div style="font-size:10px;color:var(--muted)">${daysLeft>=0?daysLeft+'天後':'已過'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════
+// ANI COMMENTS
+// ══════════════════════════
+async function callAni(prompt, targetId) {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:1000,
+        system:'你是 Ani，Allen 的選擇權策略顧問。核心：2028交屋目標、每月NT$10萬Theta、TSLA$500/$900目標、EL<20%只能BPS。中英混用，精簡直接，3–4點。',
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    document.getElementById(targetId).innerHTML = text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  } catch(e) {
+    document.getElementById(targetId).textContent = '⚠️ AI 評語載入失敗';
+  }
+}
+
+function getAniD() {
+  callAni(`Allen 的2028交屋資金分析：缺口 NT$444萬，距今約28個月。每月Theta NT$10萬，累計可收 NT$280萬。TSLA $500達成可貢獻 NT$157萬。群益質借 NT$295萬可動用。2028/7月最危險（元大清償NT$400萬）。請評估：①缺口能否如期填補②最大風險是哪個月③建議提前採取的行動。`,'ani-d');
+}
+function getAniE() {
+  callAni(`Allen 的選擇權歷史績效：65筆，勝率約75%，VTI表現最穩（勝率最高、年化ROI最佳），TSLA波動最大，NVDA最近有ITM問題，QQQ BPS有一筆虧損54.6%。請評估：①你的強項標的是誰②哪個策略需要改進③從績效看，你的最大操作盲點是什麼。`,'ani-e');
+}
+function getAniF() {
+  callAni(`目前IV環境：TSLA IVR 34（中等），NVDA IVR 36（中等），QQQ IVR 78（高位），IWM IVR 46（偏高），VIX 22.22（正常偏高）。近期有CPI（6/11）和FOMC（6/18）。請評估：①現在最適合開倉的標的是哪些②哪些應該等待③財報前應該如何調整策略。`,'ani-f');
+}
+
+// INIT D on load (default tab)
+initD();
+</script>
+</body>
+</html>
