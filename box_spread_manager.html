@@ -82,7 +82,12 @@ input:focus,select:focus{border-color:var(--accent)}
     <div class="h-title">📦 Box Spread 到期管理</div>
     <div class="h-sub">利率比較 · 展延成本試算 · IB 下單格式</div>
   </div>
-  <span class="badge">⚠️ 189天後到期</span>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span id="sync-fx" style="font-size:11px;color:var(--muted)">USD/TWD: 31.68</span>
+    <span id="sync-el" style="font-size:11px;color:var(--muted)">EL: —</span>
+    <span id="sync-badge" style="font-size:11px;color:var(--muted)">⏳ 等待同步…</span>
+    <span class="badge">⚠️ 189天後到期</span>
+  </div>
 </header>
 
 <div class="wrap">
@@ -398,6 +403,87 @@ renderInterestChart();
 renderRateTable();
 renderIBOrder(BALANCE_TWD, FX, 0.04, new Date('2027-12-19'));
 getAniComment();
+
+// ════════════════════════════════════════════════
+// HUB SYNC RECEIVER
+// ════════════════════════════════════════════════
+function loadSync() {
+  try {
+    const raw = localStorage.getItem('hub_sync_data');
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+
+    // Update FX rate display if changed
+    if (d.usd_twd) {
+      const fxEl = document.getElementById('sync-fx');
+      if (fxEl) fxEl.textContent = 'USD/TWD: ' + d.usd_twd.toFixed(2);
+    }
+
+    // Update EL / NLV display
+    const elEl = document.getElementById('sync-el');
+    if (elEl && d.excess_liquidity && d.nlv) {
+      const elPct = (d.excess_liquidity / d.nlv * 100);
+      elEl.textContent = 'EL: $' + Math.round(d.excess_liquidity).toLocaleString()
+        + ' (' + elPct.toFixed(1) + '% NLV)';
+      elEl.style.color = elPct < 20 ? 'var(--red)' : elPct < 35 ? 'var(--yellow)' : 'var(--green)';
+    }
+
+    // Sync badge
+    const badge = document.getElementById('sync-badge');
+    if (badge) {
+      const age = Math.round((Date.now() - d.ts) / 1000);
+      badge.textContent = (d.isLive ? '✅ Hub 即時' : '📋 Hub 快取')
+        + ' · ' + (age < 60 ? age + '秒前' : Math.round(age/60) + '分前');
+      badge.style.color = d.isLive ? 'var(--green)' : 'var(--yellow)';
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+window.addEventListener('storage', e => {
+  if (e.key === 'hub_sync_data') loadSync();
+});
+
+loadSync();
+
+</script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
 </script>
 </body>
 </html>
