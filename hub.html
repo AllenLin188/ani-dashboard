@@ -250,6 +250,9 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
     <div class="tab" onclick="switchTab('greeks')" id="tab-greeks">
       <span class="tab-icon">🔬</span><span>Greeks</span>
     </div>
+    <div class="tab" onclick="switchTab('def')" id="tab-def">
+      <span class="tab-icon">🏠</span><span>交屋·績效·IV</span>
+    </div>
     <div class="tab" onclick="switchTab('chat')" id="tab-chat">
       <span class="tab-icon">🤖</span><span>Ani 顧問</span>
     </div>
@@ -424,6 +427,9 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
       <iframe id="frame-greeks" src="" title="Portfolio Greeks"></iframe>
     </div>
 
+    <div class="panel iframe-wrap" id="panel-def">
+      <iframe id="frame-def" src="" title="交屋·績效·IV"></iframe>
+    </div>
     <!-- ANI CHAT PANEL -->
     <div class="panel" id="panel-chat">
       <div id="ani-chat">
@@ -503,6 +509,7 @@ const FRAME_SRCS = {
   box:       'box_spread_manager.html',
   daily:     'daily_pnl_report.html',
   greeks:    'portfolio_greeks.html',
+  def:       'modules_def.html',
 };
 
 function switchTab(name) {
