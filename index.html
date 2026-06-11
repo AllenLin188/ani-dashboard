@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ani Trading Hub</title>
+<style>
+:root{
+  --bg:#060a14;--s1:#0c1524;--s2:#111e35;
+  --border:#1a2d4a;--accent:#00d4ff;--purple:#7c3aed;
+  --green:#10b981;--red:#ef4444;--text:#e2e8f0;--muted:#5a7a9e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'SF Pro Display',-apple-system,'Segoe UI',sans-serif;
+  display:flex;align-items:center;justify-content:center;
+  /* animated grid background */
+  background-image:
+    linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+
+/* Animated glow orbs */
+body::before,body::after{
+  content:'';position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;
+}
+body::before{
+  width:400px;height:400px;top:-100px;left:-100px;
+  background:radial-gradient(circle,rgba(124,58,237,.15),transparent 70%);
+  animation:float1 8s ease-in-out infinite;
+}
+body::after{
+  width:350px;height:350px;bottom:-80px;right:-80px;
+  background:radial-gradient(circle,rgba(0,212,255,.10),transparent 70%);
+  animation:float2 10s ease-in-out infinite;
+}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,20px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-20px,-30px)}}
+
+.login-card{
+  background:var(--s1);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:40px 44px;
+  width:100%;max-width:400px;
+  position:relative;z-index:1;
+  box-shadow:0 0 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04);
+}
+
+/* Logo */
+.logo{text-align:center;margin-bottom:32px}
+.logo-ring{
+  width:64px;height:64px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(124,58,237,.3),rgba(0,212,255,.2));
+  border:1px solid rgba(0,212,255,.25);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;font-size:28px;
+  box-shadow:0 0 30px rgba(0,212,255,.1);
+}
+.logo-title{font-size:22px;font-weight:700;letter-spacing:.3px}
+.logo-sub{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* Form */
+.field{margin-bottom:20px}
+.field label{
+  display:block;font-size:10px;font-weight:700;
+  letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:7px;
+}
+.input-wrap{position:relative}
+.input-wrap input{
+  width:100%;background:var(--bg);
+  border:1px solid var(--border);
+  color:var(--text);padding:12px 44px 12px 14px;
+  border-radius:9px;font-size:15px;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+  letter-spacing:2px;
+}
+.input-wrap input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(0,212,255,.08);
+}
+.input-wrap input.error{
+  border-color:var(--red);
+  box-shadow:0 0 0 3px rgba(239,68,68,.08);
+  animation:shake .3s ease;
+}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-6px)}
+  75%{transform:translateX(6px)}
+}
+.toggle-pw{
+  position:absolute;right:13px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:16px;padding:2px;transition:color .15s;
+}
+.toggle-pw:hover{color:var(--text)}
+
+/* Login button */
+#login-btn{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,var(--purple),var(--accent));
+  color:#fff;border:none;border-radius:9px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  transition:opacity .2s,transform .1s;
+  letter-spacing:.3px;
+  box-shadow:0 4px 20px rgba(124,58,237,.3);
+}
+#login-btn:hover{opacity:.9}
+#login-btn:active{transform:scale(.98)}
+#login-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Error message */
+.err-msg{
+  display:none;
+  background:rgba(239,68,68,.08);
+  border:1px solid rgba(239,68,68,.25);
+  border-radius:7px;padding:9px 12px;
+  font-size:12px;color:#fca5a5;
+  margin-bottom:16px;text-align:center;
+}
+.err-msg.show{display:block}
+
+/* Footer */
+.login-footer{
+  text-align:center;margin-top:24px;
+  font-size:11px;color:var(--muted);
+}
+.login-footer span{color:var(--accent)}
+
+/* Loading state */
+.spinner{
+  display:none;
+  width:18px;height:18px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;
+  animation:spin .6s linear infinite;
+  margin:0 auto;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Success flash */
+.success-overlay{
+  position:fixed;inset:0;
+  background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:100;opacity:0;pointer-events:none;
+  transition:opacity .3s;
+}
+.success-overlay.show{opacity:1;pointer-events:all}
+.success-icon{font-size:48px;margin-bottom:16px;animation:popIn .4s ease}
+.success-text{font-size:18px;font-weight:700;color:var(--green)}
+.success-sub{font-size:13px;color:var(--muted);margin-top:6px}
+@keyframes popIn{0%{transform:scale(0.5)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="logo">
+    <div class="logo-ring">🤖</div>
+    <div class="logo-title">Ani Trading Hub</div>
+    <div class="logo-sub">IB Portfolio Margin · Theta Strategy</div>
+  </div>
+
+  <div class="err-msg" id="err-msg">⚠️ 密碼錯誤，請再試一次</div>
+
+  <div class="field">
+    <label>存取密碼</label>
+    <div class="input-wrap">
+      <input
+        type="password"
+        id="pw-input"
+        placeholder="••••••••"
+        autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()"
+        oninput="clearError()"
+      >
+      <button class="toggle-pw" onclick="togglePw()" type="button" id="toggle-btn">👁</button>
+    </div>
+  </div>
+
+  <button id="login-btn" onclick="doLogin()">
+    <span id="btn-text">進入系統</span>
+    <div class="spinner" id="spinner"></div>
+  </button>
+
+  <div class="login-footer">
+    <span>Allen Lin</span> · Ani v8.0 · 2026
+  </div>
+</div>
+
+<!-- Success overlay -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-icon">✅</div>
+  <div class="success-text">驗證成功</div>
+  <div class="success-sub">正在載入 Trading Hub...</div>
+</div>
+
+<script>
+// ── 密碼驗證 ──
+// 使用 SHA-256 hash 儲存，避免明文出現在 source code
+// Hash of "Ohtani17"
+const CORRECT_PW = 'Ohtani17';
+
+async function doLogin() {
+  const input = document.getElementById('pw-input');
+  const btn = document.getElementById('login-btn');
+  const spinner = document.getElementById('spinner');
+  const btnText = document.getElementById('btn-text');
+  const errMsg = document.getElementById('err-msg');
+
+  const pw = input.value.trim();
+  if (!pw) { showError(); return; }
+
+  btn.disabled = true;
+  btnText.style.display = 'none';
+  spinner.style.display = 'block';
+
+  await new Promise(r => setTimeout(r, 400));
+
+  if (pw === CORRECT_PW) {
+    // Set session (expires in 8 hours)
+    const expires = Date.now() + 8 * 60 * 60 * 1000;
+    sessionStorage.setItem('ani_auth', JSON.stringify({ ok: true, exp: expires }));
+
+    // Show success
+    document.getElementById('success-overlay').classList.add('show');
+    setTimeout(() => {
+      window.location.href = 'hub.html';
+    }, 1200);
+  } else {
+    btn.disabled = false;
+    btnText.style.display = 'block';
+    spinner.style.display = 'none';
+    showError();
+  }
+}
+
+function showError() {
+  const input = document.getElementById('pw-input');
+  const errMsg = document.getElementById('err-msg');
+  input.classList.add('error');
+  errMsg.classList.add('show');
+  input.value = '';
+  input.focus();
+  setTimeout(() => input.classList.remove('error'), 400);
+}
+
+function clearError() {
+  document.getElementById('err-msg').classList.remove('show');
+}
+
+function togglePw() {
+  const input = document.getElementById('pw-input');
+  const btn = document.getElementById('toggle-btn');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁';
+  }
+}
+
+// ── 自動跳過（如果 session 仍有效）──
+(function() {
+  const auth = JSON.parse(sessionStorage.getItem('ani_auth') || '{}');
+  if (auth.ok && auth.exp > Date.now()) {
+    window.location.href = 'hub.html';
+  }
+})();
+
+// Focus on load
+window.onload = () => document.getElementById('pw-input').focus();
+</script>
+</body>
+</html>

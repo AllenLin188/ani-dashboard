@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>開倉決策引擎 v1.0</title>
+<style>
+:root {
+  --bg: #070b14;
+  --s1: #0d1526;
+  --s2: #111e35;
+  --s3: #172340;
+  --border: #1a2d4a;
+  --border2: #243d60;
+  --accent: #00d4ff;
+  --purple: #7c3aed;
+  --green: #10b981;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --orange: #f97316;
+  --text: #e2e8f0;
+  --muted: #5a7a9e;
+  --muted2: #3d5a7a;
+  font-size: 14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-system,'Segoe UI',sans-serif;min-height:100vh}
+
+/* HEADER */
+header{
+  background:var(--s1);border-bottom:1px solid var(--border);
+  padding:12px 24px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50
+}
+.h-left{display:flex;align-items:center;gap:12px}
+.h-title{font-size:15px;font-weight:700;letter-spacing:.3px}
+.h-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.version-badge{
+  background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.25);
+  color:var(--accent);padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600
+}
+#load-ib-btn{
+  padding:7px 16px;background:var(--purple);color:#fff;
+  border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;
+  transition:opacity .2s
+}
+#load-ib-btn:hover{opacity:.85}
+#load-ib-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* LAYOUT */
+.wrap{padding:20px 24px;max-width:1360px;margin:0 auto}
+.two-col{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start}
+.stack{display:flex;flex-direction:column;gap:16px}
+
+/* CARD */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card-title{
+  font-size:10px;font-weight:700;letter-spacing:1.4px;
+  color:var(--muted);text-transform:uppercase;margin-bottom:14px;
+  display:flex;align-items:center;gap:6px
+}
+
+/* ACCOUNT STRIP */
+.acct-strip{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+  background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  padding:14px 18px;margin-bottom:20px
+}
+.acct-item{}
+.acct-label{font-size:9px;font-weight:600;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:3px}
+.acct-val{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+.acct-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}.cyan{color:var(--accent)}
+
+/* FORM */
+.form-group{margin-bottom:13px}
+.form-label{
+  font-size:10px;font-weight:600;letter-spacing:.8px;
+  color:var(--muted);text-transform:uppercase;margin-bottom:5px;display:block
+}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input[type=text],input[type=number],select{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  color:var(--text);padding:8px 11px;border-radius:7px;font-size:13px;
+  outline:none;transition:border-color .2s
+}
+input:focus,select:focus{border-color:var(--accent)}
+select option{background:var(--s2)}
+.hint{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* STRATEGY TOGGLE */
+.strat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px}
+.strat-btn{
+  padding:8px 4px;border-radius:7px;border:1px solid var(--border);
+  background:var(--s2);color:var(--muted);cursor:pointer;
+  font-size:11px;font-weight:600;text-align:center;transition:all .15s;
+  position:relative
+}
+.strat-btn:hover{border-color:var(--accent);color:var(--accent)}
+.strat-btn.active{background:rgba(0,212,255,.1);border-color:var(--accent);color:var(--accent)}
+.strat-btn .strat-icon{font-size:16px;display:block;margin-bottom:2px}
+.strat-btn .strat-note{font-size:9px;color:var(--muted);margin-top:2px}
+.strat-btn.active .strat-note{color:rgba(0,212,255,.6)}
+.strat-btn.disabled-strat{opacity:.35;pointer-events:none}
+
+/* SUBMIT BTN */
+#calc-btn{
+  width:100%;padding:12px;background:linear-gradient(135deg,var(--purple),var(--accent));
+  color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;
+  cursor:pointer;transition:opacity .2s;letter-spacing:.3px;margin-top:4px
+}
+#calc-btn:hover{opacity:.9}
+
+/* RESULT PANEL */
+.verdict{
+  border-radius:10px;padding:14px 18px;margin-bottom:14px;
+  display:flex;align-items:center;gap:12px
+}
+.verdict.go{background:rgba(16,185,129,.1);border:1.5px solid rgba(16,185,129,.4)}
+.verdict.warn{background:rgba(245,158,11,.1);border:1.5px solid rgba(245,158,11,.4)}
+.verdict.stop{background:rgba(239,68,68,.1);border:1.5px solid rgba(239,68,68,.4)}
+.verdict-icon{font-size:28px;flex-shrink:0}
+.verdict-title{font-size:16px;font-weight:700;margin-bottom:3px}
+.verdict-sub{font-size:12px;opacity:.8;line-height:1.5}
+
+/* METRICS GRID */
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.metric-box{
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:12px 14px
+}
+.metric-box .m-label{font-size:9px;font-weight:600;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.metric-box .m-val{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.metric-box .m-sub{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* CHECKS */
+.check-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.check-item{
+  display:flex;align-items:center;gap:8px;
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:7px;padding:9px 12px;font-size:12px
+}
+.check-icon{font-size:14px;flex-shrink:0;width:20px;text-align:center}
+.check-text{flex:1}
+.check-val{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+
+/* TIMS STRESS */
+.stress-table{width:100%;border-collapse:collapse;font-size:12px}
+.stress-table th{text-align:left;font-size:9px;letter-spacing:.8px;color:var(--muted);text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border)}
+.stress-table td{padding:7px 8px;border-bottom:1px solid rgba(26,45,74,.5)}
+.stress-table tr:last-child td{border-bottom:none}
+.stress-table tr:hover td{background:var(--s3)}
+
+/* AI BOX */
+.ai-box{
+  background:var(--s2);border:1px solid var(--border2);border-radius:8px;
+  padding:14px;font-size:12px;line-height:1.7;color:#b8d4f0;margin-top:2px;
+  min-height:60px
+}
+.ai-loading{display:flex;gap:4px;align-items:center;padding:4px 0}
+.ai-loading span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bounce 1.2s infinite}
+.ai-loading span:nth-child(2){animation-delay:.2s}
+.ai-loading span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* GAUGE MINI */
+.gauge-mini{height:5px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:4px}
+.gauge-mini-fill{height:100%;border-radius:3px;transition:width .6s}
+
+/* DIVIDER */
+.section-sep{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--muted2);text-transform:uppercase;margin:14px 0 10px;display:flex;align-items:center;gap:8px}
+.section-sep::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* MARGIN LOCKOUT BANNER */
+.lockout-banner{
+  background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);
+  border-radius:8px;padding:10px 14px;font-size:12px;color:#fca5a5;
+  margin-bottom:12px;display:none
+}
+
+@media(max-width:960px){
+  .two-col{grid-template-columns:1fr}
+  .acct-strip{grid-template-columns:1fr 1fr}
+  .metrics-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-left">
+    <div>
+      <div class="h-title">⚡ 開倉決策引擎</div>
+      <div class="h-sub">Portfolio Margin · TIMS 壓測 · 五關卡風控</div>
+    </div>
+    <span class="version-badge">v1.0</span>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <span id="ib-status" style="font-size:11px;color:var(--muted)">未連接 IB</span>
+    <button id="load-ib-btn" onclick="loadIBAccount()">📡 載入 IB 帳戶</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ACCOUNT STRIP -->
+  <div class="acct-strip" id="acct-strip">
+    <div class="acct-item">
+      <div class="acct-label">NLV</div>
+      <div class="acct-val cyan" id="s-nlv">$251,749</div>
+      <div class="acct-sub">淨清算價值</div>
+    </div>
+    <div class="acct-item">
+      <div class="acct-label">Excess Liquidity</div>
+      <div class="acct-val" id="s-el">$107,835</div>
+      <div class="acct-sub" id="s-el-sub">42.8% NLV · 可開新倉</div>
+    </div>
+    <div class="acct-item">
+      <div class="acct-label">淨 Delta 曝險</div>
+      <div class="acct-val" id="s-delta">80.5</div>
+      <div class="acct-sub" id="s-delta-sub">剩餘額度 119.5</div>
+    </div>
+    <div class="acct-item">
+      <div class="acct-label">BPS 虧損上限</div>
+      <div class="acct-val green" id="s-bps-budget">$11,513</div>
+      <div class="acct-sub">EL × 10.67%</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+
+    <!-- LEFT: INPUT FORM -->
+    <div class="stack">
+      <div class="card">
+        <div class="card-title">📋 策略選擇</div>
+
+        <div id="lockout-banner" class="lockout-banner">
+          🔴 Excess Liquidity &lt; 20% NLV：已鎖定 CSP / CC / 裸賣。僅可開 BPS（廣基指數）。
+        </div>
+
+        <div class="strat-grid">
+          <div class="strat-btn active" data-strat="BPS" onclick="selectStrat(this)">
+            <span class="strat-icon">↕️</span>BPS
+            <div class="strat-note">廣基指數<br>固定最大虧損</div>
+          </div>
+          <div class="strat-btn" data-strat="CSP" onclick="selectStrat(this)">
+            <span class="strat-icon">🛡️</span>CSP
+            <div class="strat-note">現金擔保賣Put<br>TIMS±15%</div>
+          </div>
+          <div class="strat-btn" data-strat="CC" onclick="selectStrat(this)">
+            <span class="strat-icon">📈</span>CC
+            <div class="strat-note">備兌賣Call<br>需持有正股</div>
+          </div>
+          <div class="strat-btn" data-strat="BCS" onclick="selectStrat(this)">
+            <span class="strat-icon">↕️</span>BCS
+            <div class="strat-note">熊市Call價差<br>固定最大虧損</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">標的</label>
+          <select id="f-symbol" onchange="onSymbolChange()">
+            <optgroup label="廣基指數（BPS 優先）">
+              <option value="QQQ" data-type="broad">QQQ</option>
+              <option value="IWM" data-type="broad">IWM</option>
+              <option value="SPY" data-type="broad">SPY</option>
+              <option value="VTI" data-type="broad">VTI</option>
+            </optgroup>
+            <optgroup label="個股（Excess Liq 需充裕）">
+              <option value="TSLA" data-type="stock">TSLA</option>
+              <option value="NVDA" data-type="stock">NVDA</option>
+            </optgroup>
+          </select>
+          <div class="hint" id="symbol-hint">廣基指數：TIMS壓測 +6% / -8%</div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">到期日</label>
+            <input type="text" id="f-expiry" placeholder="2026/8/21" value="2026/8/21">
+          </div>
+          <div class="form-group">
+            <label class="form-label">DTE（天）</label>
+            <input type="number" id="f-dte" placeholder="自動計算" readonly style="background:var(--s2);cursor:not-allowed">
+          </div>
+        </div>
+
+        <!-- BPS fields -->
+        <div id="bps-fields">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">賣出履約價（Short Put）</label>
+              <input type="number" id="f-short" placeholder="272" step="0.5">
+            </div>
+            <div class="form-group">
+              <label class="form-label">買入履約價（Long Put）</label>
+              <input type="number" id="f-long" placeholder="257" step="0.5">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">單口淨收權利金（$）</label>
+              <input type="number" id="f-premium" placeholder="1.90" step="0.01">
+            </div>
+            <div class="form-group">
+              <label class="form-label">單口 Delta（正值）</label>
+              <input type="number" id="f-delta" placeholder="0.12" step="0.001">
+            </div>
+          </div>
+        </div>
+
+        <!-- CSP/CC fields -->
+        <div id="csp-fields" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" id="strike-label">履約價（Strike）</label>
+              <input type="number" id="f-strike" placeholder="370" step="0.5">
+            </div>
+            <div class="form-group">
+              <label class="form-label">標的現價（$）</label>
+              <input type="number" id="f-underlying" placeholder="383.97" step="0.01">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">單口淨收權利金（$）</label>
+              <input type="number" id="f-premium2" placeholder="10.41" step="0.01">
+            </div>
+            <div class="form-group">
+              <label class="form-label">單口 Delta（正值）</label>
+              <input type="number" id="f-delta2" placeholder="0.33" step="0.001">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">IV（%）</label>
+              <input type="number" id="f-iv" placeholder="50" step="0.1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">IV Rank（0–100）</label>
+              <input type="number" id="f-ivr" placeholder="34" step="1">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">口數（張）</label>
+          <input type="number" id="f-qty" placeholder="1" min="1" step="1" value="1" oninput="onQtyChange()">
+          <div class="hint" id="qty-hint">輸入後自動計算最多可開口數</div>
+        </div>
+
+        <button id="calc-btn" onclick="calculate()">⚡ 執行五關卡風控計算</button>
+      </div>
+
+      <!-- MAX LOTS CALCULATOR -->
+      <div class="card" id="max-lots-card" style="display:none">
+        <div class="card-title">🔢 最大可開口數試算</div>
+        <div id="max-lots-content"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: RESULTS -->
+    <div class="stack" id="result-panel">
+      <!-- Placeholder -->
+      <div class="card" style="text-align:center;padding:60px 20px;color:var(--muted)">
+        <div style="font-size:36px;margin-bottom:12px">⚡</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px">填入左側參數後按下計算</div>
+        <div style="font-size:12px">系統將執行五重風控關卡 + TIMS 壓力測試<br>並給出 AI 策略建議</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const STATE = {
+  nlv: 251748.84,
+  excess_liquidity: 107834.87,
+  maintenance_margin: 143913.97,
+  initial_margin: 158854.98,
+  available_funds: 92893.86,
+  current_delta: 80.5,
+  delta_limit_max: 200,    // Allen's upper bound
+  delta_limit_min: -250,
+  bps_budget_pct: 0.1067,  // EL × this = max BPS loss budget
+  usd_twd: 31.68,
+  strat: 'BPS'
+};
+
+// ════════════════════════════════════════
+// IB LOADER
+// ════════════════════════════════════════
+async function loadIBAccount() {
+  const btn = document.getElementById('load-ib-btn');
+  const status = document.getElementById('ib-status');
+  btn.disabled = true; btn.textContent = '連線中...';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: 'Call IBKR get_account_summary. Return ONLY JSON: {"nlv":number,"excess_liquidity":number,"maintenance_margin":number,"initial_margin":number,"available_funds":number,"leverage":number}',
+        messages: [{role:'user',content:'Get account summary now. Return only JSON.'}],
+        mcp_servers: [{type:'url',url:'https://api.ibkr.com/v1/api/mcp',name:'ibkr'}]
+      })
+    });
+    const data = await res.json();
+    let txt = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    txt = txt.replace(/```json\n?|```\n?/g,'').trim();
+    const parsed = JSON.parse(txt);
+    Object.assign(STATE, parsed);
+    updateAccountStrip();
+    status.textContent = '✅ IB 已連接 · ' + new Date().toLocaleTimeString('zh-TW');
+    status.style.color = 'var(--green)';
+  } catch(e) {
+    status.textContent = '⚠️ 使用快取數據（2026-06-11）';
+    status.style.color = 'var(--yellow)';
+    updateAccountStrip();
+  }
+  btn.disabled = false; btn.textContent = '📡 載入 IB 帳戶';
+}
+
+function updateAccountStrip() {
+  const el = STATE.excess_liquidity, nlv = STATE.nlv;
+  const elPct = (el / nlv * 100);
+  const elColor = elPct < 10 ? 'red' : elPct < 20 ? 'yellow' : 'green';
+  const bpsBudget = el * STATE.bps_budget_pct;
+  const remainDelta = STATE.delta_limit_max - STATE.current_delta;
+
+  document.getElementById('s-nlv').textContent = '$' + Math.round(nlv).toLocaleString();
+  const elEl = document.getElementById('s-el');
+  elEl.textContent = '$' + Math.round(el).toLocaleString();
+  elEl.className = 'acct-val ' + elColor;
+  document.getElementById('s-el-sub').textContent = elPct.toFixed(1) + '% NLV · ' + (elPct < 20 ? '⚠️ 僅BPS' : '✅ 可開新倉');
+  document.getElementById('s-delta').textContent = STATE.current_delta.toFixed(1);
+  document.getElementById('s-delta-sub').textContent = '剩餘額度 ' + remainDelta.toFixed(1);
+  document.getElementById('s-bps-budget').textContent = '$' + Math.round(bpsBudget).toLocaleString();
+
+  // Show lockout banner if EL < 20%
+  document.getElementById('lockout-banner').style.display = elPct < 20 ? 'block' : 'none';
+
+  // Disable CSP/CC if EL < 20%
+  document.querySelectorAll('.strat-btn').forEach(btn => {
+    const s = btn.dataset.strat;
+    if (elPct < 20 && (s === 'CSP' || s === 'CC')) {
+      btn.classList.add('disabled-strat');
+    } else {
+      btn.classList.remove('disabled-strat');
+    }
+  });
+}
+
+// ════════════════════════════════════════
+// UI HELPERS
+// ════════════════════════════════════════
+function selectStrat(el) {
+  document.querySelectorAll('.strat-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  STATE.strat = el.dataset.strat;
+  // Toggle field groups
+  const isBPS = STATE.strat === 'BPS' || STATE.strat === 'BCS';
+  document.getElementById('bps-fields').style.display = isBPS ? '' : 'none';
+  document.getElementById('csp-fields').style.display = isBPS ? 'none' : '';
+  if (STATE.strat === 'CC') {
+    document.getElementById('strike-label').textContent = '履約價（Call Strike）';
+  } else if (STATE.strat === 'CSP') {
+    document.getElementById('strike-label').textContent = '履約價（Put Strike）';
+  }
+}
+
+function onSymbolChange() {
+  const sel = document.getElementById('f-symbol');
+  const opt = sel.options[sel.selectedIndex];
+  const isBroad = opt.dataset.type === 'broad';
+  document.getElementById('symbol-hint').textContent = isBroad
+    ? '廣基指數：TIMS壓測 +6% / -8%（保證金較低）'
+    : '個股：TIMS壓測 ±15%（保證金較高）';
+}
+
+function onQtyChange() {
+  // Trigger max lots recalc if we already have fields filled
+  const qty = parseInt(document.getElementById('f-qty').value);
+  if (qty > 0) document.getElementById('qty-hint').textContent = `${qty} 口 · 按計算查看是否超限`;
+}
+
+// Auto-calc DTE on expiry change
+document.getElementById('f-expiry').addEventListener('input', function() {
+  const d = new Date(this.value.replace(/\//g,'-'));
+  if (!isNaN(d)) {
+    const dte = Math.round((d - new Date()) / 86400000);
+    document.getElementById('f-dte').value = dte > 0 ? dte : '';
+  }
+});
+// Trigger once
+document.getElementById('f-expiry').dispatchEvent(new Event('input'));
+
+// ════════════════════════════════════════
+// CORE CALCULATION ENGINE
+// ════════════════════════════════════════
+function calculate() {
+  const strat = STATE.strat;
+  const isBPS = strat === 'BPS' || strat === 'BCS';
+  const symbol = document.getElementById('f-symbol').value;
+  const opt = document.getElementById('f-symbol').options[document.getElementById('f-symbol').selectedIndex];
+  const isBroad = opt.dataset.type === 'broad';
+  const dte = parseInt(document.getElementById('f-dte').value) || 36;
+  const qty = Math.max(1, parseInt(document.getElementById('f-qty').value) || 1);
+
+  let result = {};
+
+  if (isBPS) {
+    const shortStrike = parseFloat(document.getElementById('f-short').value);
+    const longStrike = parseFloat(document.getElementById('f-long').value);
+    const premium = parseFloat(document.getElementById('f-premium').value);
+    const delta = parseFloat(document.getElementById('f-delta').value);
+
+    if (!shortStrike || !longStrike || !premium || !delta) {
+      alert('請填入所有 BPS 欄位'); return;
+    }
+
+    const width = shortStrike - longStrike;
+    const maxLossPerUnit = (width - premium) * 100;
+    const totalPremium = premium * qty * 100;
+    const totalMaxLoss = maxLossPerUnit * qty;
+    const marginRequired = totalMaxLoss; // BPS margin = max loss (fixed)
+    const totalDelta = delta * qty;
+    const rr = (totalPremium / totalMaxLoss * 100);
+    const annualRoi = (totalPremium / marginRequired) * (365 / dte) * 100;
+    const breakeven = shortStrike - premium;
+    const otmPct = 0; // will be calculated if underlying given
+
+    // Max lots calculation
+    const bpsBudget = STATE.excess_liquidity * STATE.bps_budget_pct;
+    const maxByBudget = Math.floor(bpsBudget / maxLossPerUnit);
+    const remainDelta = STATE.delta_limit_max - STATE.current_delta;
+    const maxByDelta = Math.floor(remainDelta / delta);
+    const maxLots = Math.min(maxByBudget, maxByDelta);
+
+    result = {
+      strat, symbol, dte, qty, isBPS: true, isBroad,
+      shortStrike, longStrike, premium, delta, width,
+      maxLossPerUnit, totalPremium, totalMaxLoss, marginRequired,
+      totalDelta, rr, annualRoi, breakeven,
+      maxByBudget, maxByDelta, maxLots,
+      // TIMS stress
+      timsDown: isBroad ? 0.08 : 0.15,
+      timsUp: isBroad ? 0.06 : 0.15,
+    };
+
+    result.checks = runChecks(result);
+    result.verdict = getVerdict(result.checks);
+
+  } else {
+    // CSP / CC
+    const strike = parseFloat(document.getElementById('f-strike').value);
+    const underlying = parseFloat(document.getElementById('f-underlying').value);
+    const premium = parseFloat(document.getElementById('f-premium2').value);
+    const delta = parseFloat(document.getElementById('f-delta2').value);
+    const iv = parseFloat(document.getElementById('f-iv').value) || 40;
+    const ivr = parseFloat(document.getElementById('f-ivr').value) || 30;
+
+    if (!strike || !underlying || !premium || !delta) {
+      alert('請填入所有欄位'); return;
+    }
+
+    // TIMS margin for CSP: max loss under ±15% stress
+    const stressDown = isBroad ? 0.08 : 0.15;
+    const stressPrice = underlying * (1 - stressDown);
+    const timsMarginPerUnit = Math.max(strike - stressPrice, 0) * 100 - premium * 100;
+    const timsMarginPerUnit2 = (strat === 'CSP')
+      ? Math.max((strike - stressPrice), 0) * 100
+      : underlying * stressDown * 100; // CC: stock drops 15%
+    const marginRequired = Math.max(timsMarginPerUnit2 - premium * 100, 0) * qty;
+
+    const otmPct = strat === 'CSP'
+      ? ((underlying - strike) / underlying * 100)
+      : ((strike - underlying) / underlying * 100);
+    const totalPremium = premium * qty * 100;
+    const totalDelta = delta * qty;
+    const annualRoi = (totalPremium / (marginRequired || 1)) * (365 / dte) * 100;
+
+    // Max lots
+    const remainFunds = STATE.available_funds;
+    const maxByFunds = Math.floor(remainFunds / Math.max(timsMarginPerUnit2, 100));
+    const remainDelta = STATE.delta_limit_max - STATE.current_delta;
+    const maxByDelta = Math.floor(remainDelta / delta);
+    const maxLots = Math.min(maxByFunds, maxByDelta);
+
+    result = {
+      strat, symbol, dte, qty, isBPS: false, isBroad,
+      strike, underlying, premium, delta, iv, ivr,
+      timsMarginPerUnit: timsMarginPerUnit2,
+      marginRequired, otmPct, totalPremium, totalDelta,
+      annualRoi, timsDown: stressDown,
+      maxByFunds, maxByDelta, maxLots
+    };
+
+    result.checks = runChecks(result);
+    result.verdict = getVerdict(result.checks);
+  }
+
+  renderResult(result);
+  showMaxLots(result);
+  getAIComment(result);
+}
+
+// ════════════════════════════════════════
+// FIVE CHECKS
+// ════════════════════════════════════════
+function runChecks(r) {
+  const checks = [];
+  const elPct = STATE.excess_liquidity / STATE.nlv * 100;
+  const remainDelta = STATE.delta_limit_max - STATE.current_delta;
+
+  // CHECK 1: Available Funds / Excess Liquidity
+  if (r.isBPS) {
+    const bpsBudget = STATE.excess_liquidity * STATE.bps_budget_pct;
+    const ok = r.totalMaxLoss <= bpsBudget;
+    checks.push({
+      pass: ok,
+      label: 'CHECK 1 · BPS 虧損上限',
+      detail: `本筆最大虧損 $${r.totalMaxLoss.toLocaleString()} vs. 上限 $${Math.round(bpsBudget).toLocaleString()}`,
+      val: ok ? '✅ 通過' : '❌ 超限',
+      color: ok ? 'green' : 'red'
+    });
+  } else {
+    const ok = STATE.available_funds > r.marginRequired;
+    checks.push({
+      pass: ok,
+      label: 'CHECK 1 · Available Funds',
+      detail: `新倉所需保證金 $${Math.round(r.marginRequired).toLocaleString()} vs. 可用 $${Math.round(STATE.available_funds).toLocaleString()}`,
+      val: ok ? '✅ 通過' : '❌ 不足',
+      color: ok ? 'green' : 'red'
+    });
+  }
+
+  // CHECK 2: Excess Liquidity 緩衝
+  const elAfter = r.isBPS
+    ? STATE.excess_liquidity - r.totalMaxLoss
+    : STATE.excess_liquidity - r.marginRequired;
+  const elAfterPct = (elAfter / STATE.nlv * 100);
+  const ok2 = elAfterPct >= 15;
+  checks.push({
+    pass: ok2,
+    label: 'CHECK 2 · 開倉後 Excess Liquidity',
+    detail: `開倉後 EL 估計：$${Math.round(elAfter).toLocaleString()} (${elAfterPct.toFixed(1)}% NLV)`,
+    val: ok2 ? '✅ 安全' : elAfterPct > 0 ? '⚠️ 偏緊' : '❌ 危險',
+    color: ok2 ? 'green' : elAfterPct > 0 ? 'yellow' : 'red'
+  });
+
+  // CHECK 3: Delta 額度
+  const newTotalDelta = STATE.current_delta + r.totalDelta;
+  const ok3 = newTotalDelta <= STATE.delta_limit_max;
+  checks.push({
+    pass: ok3,
+    label: 'CHECK 3 · 淨 Delta 曝險',
+    detail: `開倉後 Delta：${STATE.current_delta.toFixed(1)} + ${r.totalDelta.toFixed(2)} = ${newTotalDelta.toFixed(2)}（上限 ${STATE.delta_limit_max}）`,
+    val: ok3 ? '✅ 通過' : '❌ 超限',
+    color: ok3 ? 'green' : 'red'
+  });
+
+  // CHECK 4: DTE（30–60 天最佳）
+  const ok4 = r.dte >= 25 && r.dte <= 65;
+  checks.push({
+    pass: ok4,
+    label: 'CHECK 4 · DTE 時間窗口',
+    detail: `DTE = ${r.dte} 天（最佳區間 30–60 天，Theta 衰退效率最高）`,
+    val: r.dte < 21 ? '⚠️ 過短 Gamma 風險高' : r.dte > 65 ? '⚠️ 過長 Theta 效率低' : '✅ 最佳',
+    color: ok4 ? 'green' : 'yellow'
+  });
+
+  // CHECK 5: 策略合規（EL < 20% 只能 BPS）
+  const elLow = elPct < 20;
+  const ok5 = !elLow || r.isBPS;
+  checks.push({
+    pass: ok5,
+    label: 'CHECK 5 · 策略合規（保證金狀態）',
+    detail: elLow
+      ? `Excess Liquidity = ${elPct.toFixed(1)}% < 20%：${r.isBPS ? '✅ BPS 符合規定' : '❌ 禁止開 CSP/CC'}`
+      : `Excess Liquidity = ${elPct.toFixed(1)}% ≥ 20%：所有策略可用`,
+    val: ok5 ? '✅ 合規' : '❌ 違規',
+    color: ok5 ? 'green' : 'red'
+  });
+
+  return checks;
+}
+
+function getVerdict(checks) {
+  const fails = checks.filter(c => !c.pass).length;
+  const criticalFail = checks[0] && !checks[0].pass; // CHECK 1 is critical
+  const complianceFail = !checks[4].pass;
+
+  if (criticalFail || complianceFail) return 'stop';
+  if (fails >= 2) return 'warn';
+  if (fails === 1) return 'warn';
+  return 'go';
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function renderResult(r) {
+  const verdictMap = {
+    go: { icon: '✅', title: '🟢 准予開倉', sub: '五關卡全部通過，風控符合規定，可執行交易。', cls: 'go' },
+    warn: { icon: '⚠️', title: '🟡 謹慎開倉', sub: '部分風控指標偏緊，建議縮減口數或等待更好時機。', cls: 'warn' },
+    stop: { icon: '🔴', title: '🔴 禁止開倉', sub: '關鍵風控檢查未通過，執行此交易將危及帳戶安全。', cls: 'stop' }
+  };
+  const v = verdictMap[r.verdict];
+
+  const checksHTML = r.checks.map(c => `
+    <div class="check-item">
+      <div class="check-icon">${c.pass ? '✅' : (c.color === 'yellow' ? '⚠️' : '❌')}</div>
+      <div class="check-text">
+        <div style="font-weight:600;margin-bottom:2px">${c.label}</div>
+        <div style="font-size:11px;color:var(--muted)">${c.detail}</div>
+      </div>
+      <div class="check-val ${c.color}">${c.val}</div>
+    </div>`).join('');
+
+  // Key metrics
+  let metricsHTML = '';
+  if (r.isBPS) {
+    metricsHTML = `
+      <div class="metric-box">
+        <div class="m-label">最大虧損（保證金）</div>
+        <div class="m-val red">$${r.totalMaxLoss.toLocaleString()}</div>
+        <div class="m-sub">${r.qty} 口 × (${r.shortStrike}-${r.longStrike}-${r.premium}) × 100</div>
+      </div>
+      <div class="metric-box">
+        <div class="m-label">收取權利金</div>
+        <div class="m-val green">$${r.totalPremium.toLocaleString()}</div>
+        <div class="m-sub">$${r.premium}/股 × ${r.qty} 口 × 100</div>
+      </div>
+      <div class="metric-box">
+        <div class="m-label">風險報酬比 R:R</div>
+        <div class="m-val ${r.rr >= 10 ? 'green' : r.rr >= 6 ? 'yellow' : 'red'}">${r.rr.toFixed(1)}%</div>
+        <div class="m-sub">${r.rr >= 10 ? '🟢 豐厚' : r.rr >= 6 ? '🟡 尚可' : '🔴 偏低'}</div>
+      </div>
+      <div class="metric-box">
+        <div class="m-label">年化報酬率</div>
+        <div class="m-val cyan">${r.annualRoi.toFixed(0)}%</div>
+        <div class="m-sub">DTE ${r.dte} 天 · 保證金為基礎</div>
+      </div>
+      <div class="metric-box">
+        <div class="m-label">損益兩平價</div>
+        <div class="m-val">$${r.breakeven.toFixed(2)}</div>
+        <div class="m-sub">Short Strike - Premium</div>
+      </div>
+      <div class="metric-box">
+        <div class="m-label">新增 Delta 曝險</div>
+        <div class="m-val">${r.totalDelta.toFixed(2)}</div>
+        <div class="m-sub">開倉後累計：${(STATE.current_delta + r.totalDelta).toFixed(1)}</div>
+      </div>`;
+  } else {
+    const timsStressPrice = r.underlying * (1 - r.timsDown);
+    metricsHTML = `
+      <div class="metric-box">
+        <div class="m-label">TIMS 保證金（估）</div>
+        <div class="m-val red">$${Math.round(r.marginRequired).toLocaleString()}</div>
+        <div class="m-sub">壓測至 $${timsStressPrice.toFixed(1)}（-${(r.timsDown*100).toFixed(0)}%）</div>
+      </div>
+      <div class="metric-box">
+        <div class="m-label">收取權利金</div>
+        <div class="m-val green">$${r.totalPremium.toLocaleString()}</div>
+        <div class="m-sub">$${r.premium}/股 × ${r.qty} 口 × 100</div>
+      </div>
+      <div class="metric-box">
+        <div class="m-label">價外幅度 OTM%</div>
+        <div class="m-val ${r.otmPct >= 5 ? 'green' : r.otmPct >= 2 ? 'yellow' : 'red'}">${r.otmPct.toFixed(1)}%</div>
+        <div class="m-sub">${r.otmPct >= 5 ? '✅ 安全距離足' : r.otmPct >= 2 ? '⚠️ 偏近' : '🔴 幾乎平值'}</div>
+      </div>
+      <div class="metric-box">
+        <div class="m-label">年化報酬率</div>
+        <div class="m-val cyan">${r.annualRoi.toFixed(0)}%</div>
+        <div class="m-sub">DTE ${r.dte} 天</div>
+      </div>
+      <div class="metric-box">
+        <div class="m-label">IV Rank</div>
+        <div class="m-val ${r.ivr >= 50 ? 'green' : r.ivr >= 30 ? 'yellow' : 'red'}">${r.ivr}</div>
+        <div class="m-sub">${r.ivr >= 50 ? '✅ 高IV 適合賣方' : r.ivr >= 30 ? '⚠️ 中等' : '🔴 IV偏低，謹慎'}</div>
+      </div>
+      <div class="metric-box">
+        <div class="m-label">新增 Delta 曝險</div>
+        <div class="m-val">${r.totalDelta.toFixed(2)}</div>
+        <div class="m-sub">開倉後累計：${(STATE.current_delta + r.totalDelta).toFixed(1)}</div>
+      </div>`;
+  }
+
+  // TIMS stress table
+  const underlying = r.underlying || r.shortStrike;
+  const timsRows = (() => {
+    const scenarios = r.isBroad
+      ? [{label:'+6% (上漲壓測)',pct:0.06,dir:1},{label:'-8% (下跌壓測)',pct:0.08,dir:-1}]
+      : [{label:'+15% (上漲壓測)',pct:0.15,dir:1},{label:'-15% (下跌壓測)',pct:0.15,dir:-1}];
+    return scenarios.map(s => {
+      const stressPrice = r.isBPS
+        ? (r.shortStrike * (1 + s.dir * s.pct))
+        : (r.underlying * (1 + s.dir * s.pct));
+      let pnl = 0;
+      if (r.isBPS) {
+        // For put spread: only downside matters
+        if (s.dir < 0) {
+          const intrinsic = Math.max(r.shortStrike - stressPrice, 0) - Math.max(r.longStrike - stressPrice, 0);
+          pnl = (r.premium - intrinsic) * r.qty * 100;
+        } else {
+          pnl = r.totalPremium; // call side, put spread profits fully
+        }
+      } else {
+        if (r.strat === 'CSP') {
+          const intrinsic = Math.max(r.strike - stressPrice, 0);
+          pnl = (r.premium - intrinsic) * r.qty * 100;
+        } else { // CC
+          const intrinsic = Math.max(stressPrice - r.strike, 0);
+          pnl = (r.premium - intrinsic) * r.qty * 100;
+        }
+      }
+      const color = pnl >= 0 ? 'green' : pnl > -r.totalMaxLoss * 0.5 ? 'yellow' : 'red';
+      return `<tr>
+        <td>${s.label}</td>
+        <td>$${stressPrice.toFixed(1)}</td>
+        <td class="${color}" style="font-weight:600">${pnl >= 0 ? '+' : ''}$${Math.round(pnl).toLocaleString()}</td>
+        <td style="font-size:11px;color:var(--muted)">${pnl >= 0 ? '全收' : pnl > -r.totalPremium ? '部分虧損' : '超過本金'}</td>
+      </tr>`;
+    }).join('');
+  })();
+
+  document.getElementById('result-panel').innerHTML = `
+    <div class="card">
+      <div class="verdict ${v.cls}">
+        <div class="verdict-icon">${v.icon}</div>
+        <div>
+          <div class="verdict-title">${v.title}</div>
+          <div class="verdict-sub">${v.sub}</div>
+        </div>
+      </div>
+
+      <div class="section-sep">五關卡風控檢查</div>
+      <div class="check-list">${checksHTML}</div>
+
+      <div class="section-sep">關鍵指標</div>
+      <div class="metrics-grid">${metricsHTML}</div>
+
+      <div class="section-sep">TIMS 壓力測試</div>
+      <table class="stress-table">
+        <thead><tr><th>情境</th><th>壓測後價格</th><th>損益</th><th>說明</th></tr></thead>
+        <tbody>${timsRows}</tbody>
+      </table>
+    </div>
+
+    <div class="card" id="ai-comment-card">
+      <div class="card-title">🤖 Ani 策略評語</div>
+      <div class="ai-box" id="ai-comment">
+        <div class="ai-loading"><span></span><span></span><span></span></div>
+      </div>
+    </div>`;
+}
+
+function showMaxLots(r) {
+  const card = document.getElementById('max-lots-card');
+  card.style.display = '';
+
+  const rows = r.isBPS
+    ? `<div class="check-item">
+        <div class="check-icon">💰</div>
+        <div class="check-text"><div style="font-weight:600">BPS 虧損預算限制</div><div style="font-size:11px;color:var(--muted)">EL × 10.67% = $${Math.round(STATE.excess_liquidity * STATE.bps_budget_pct).toLocaleString()} ÷ $${Math.round(r.maxLossPerUnit).toLocaleString()}/口</div></div>
+        <div class="check-val cyan">${r.maxByBudget} 口</div>
+       </div>
+       <div class="check-item">
+        <div class="check-icon">📊</div>
+        <div class="check-text"><div style="font-weight:600">Delta 額度限制</div><div style="font-size:11px;color:var(--muted)">剩餘 ${(STATE.delta_limit_max - STATE.current_delta).toFixed(1)} ÷ ${r.delta} Delta/口</div></div>
+        <div class="check-val cyan">${r.maxByDelta} 口</div>
+       </div>
+       <div class="check-item" style="background:rgba(0,212,255,.05);border-color:rgba(0,212,255,.3)">
+        <div class="check-icon">⚡</div>
+        <div class="check-text"><div style="font-weight:600;color:var(--accent)">最大建議開倉口數</div><div style="font-size:11px;color:var(--muted)">取兩項限制的最小值</div></div>
+        <div class="check-val" style="color:var(--accent);font-size:18px">${r.maxLots} 口</div>
+       </div>`
+    : `<div class="check-item">
+        <div class="check-icon">💰</div>
+        <div class="check-text"><div style="font-weight:600">Available Funds 限制</div><div style="font-size:11px;color:var(--muted)">$${Math.round(STATE.available_funds).toLocaleString()} ÷ $${Math.round(r.timsMarginPerUnit).toLocaleString()}/口</div></div>
+        <div class="check-val cyan">${r.maxByFunds} 口</div>
+       </div>
+       <div class="check-item">
+        <div class="check-icon">📊</div>
+        <div class="check-text"><div style="font-weight:600">Delta 額度限制</div><div style="font-size:11px;color:var(--muted)">剩餘 ${(STATE.delta_limit_max - STATE.current_delta).toFixed(1)} ÷ ${r.delta} Delta/口</div></div>
+        <div class="check-val cyan">${r.maxByDelta} 口</div>
+       </div>
+       <div class="check-item" style="background:rgba(0,212,255,.05);border-color:rgba(0,212,255,.3)">
+        <div class="check-icon">⚡</div>
+        <div class="check-text"><div style="font-weight:600;color:var(--accent)">最大建議開倉口數</div></div>
+        <div class="check-val" style="color:var(--accent);font-size:18px">${r.maxLots} 口</div>
+       </div>`;
+
+  document.getElementById('max-lots-card').innerHTML = `
+    <div class="card-title">🔢 最大可開口數試算</div>
+    <div class="check-list">${rows}</div>`;
+}
+
+// ════════════════════════════════════════
+// AI COMMENT
+// ════════════════════════════════════════
+async function getAIComment(r) {
+  const el = document.getElementById('ai-comment');
+  if (!el) return;
+
+  const prompt = r.isBPS
+    ? `Allen 正評估開倉：${r.symbol} BPS ${r.shortStrike}/${r.longStrike}P，${r.qty}口，DTE ${r.dte}天，收$${r.premium}/股，Delta ${r.delta}，最大虧損$${r.totalMaxLoss}，年化${r.annualRoi.toFixed(0)}%，R:R ${r.rr.toFixed(1)}%。帳戶EL $${Math.round(STATE.excess_liquidity)}，現有Delta ${STATE.current_delta}。風控結果：${r.verdict}。給3行精簡評語（中英混用，術語英文）：①策略品質評分，②關鍵風險點，③操作建議。`
+    : `Allen 正評估開倉：${r.symbol} ${r.strat} ${r.strike}，標的$${r.underlying}，${r.qty}口，DTE ${r.dte}天，收$${r.premium}/股，Delta ${r.delta}，IVR ${r.ivr}，TIMS保證金估$${Math.round(r.marginRequired)}，年化${r.annualRoi.toFixed(0)}%，OTM ${r.otmPct.toFixed(1)}%。帳戶EL $${Math.round(STATE.excess_liquidity)}。風控結果：${r.verdict}。給3行精簡評語（中英混用）：①策略品質評分，②最大風險點，③操作建議。`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `你是 Ani，Allen 的選擇權策略顧問。核心規則：①廣基指數TIMS+6%/-8%，個股±15%。②EL<20%只能BPS。③IB無Margin Call直接砍倉。④Box Spread Delta=0不計入風控。回答精簡，3個重點，中英混用。`,
+        messages: [{role:'user',content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    el.innerHTML = text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  } catch(e) {
+    el.textContent = '⚠️ AI 評語載入失敗，請確認 API 連線。';
+  }
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+updateAccountStrip();
+</script>
+</body>
+</html>

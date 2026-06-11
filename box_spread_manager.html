@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Box Spread 到期管理</title>
+<style>
+:root{
+  --bg:#060a14;--s1:#0c1524;--s2:#111e35;--s3:#162540;
+  --border:#1a2d4a;--border2:#243d60;
+  --accent:#00d4ff;--purple:#7c3aed;--green:#10b981;
+  --red:#ef4444;--yellow:#f59e0b;--text:#e2e8f0;--muted:#5a7a9e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-system,sans-serif;min-height:100vh}
+header{background:var(--s1);border-bottom:1px solid var(--border);padding:13px 24px;display:flex;align-items:center;justify-content:space-between}
+.h-title{font-size:15px;font-weight:700}.h-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.badge{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:var(--yellow);padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600}
+.wrap{padding:20px 24px;max-width:1200px;margin:0 auto}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+.ct{font-size:10px;font-weight:700;letter-spacing:1.4px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.sep{font-size:9px;font-weight:700;letter-spacing:1.4px;color:#3a5270;text-transform:uppercase;margin:14px 0 10px;display:flex;align-items:center;gap:6px}
+.sep::after{content:'';flex:1;height:1px;background:var(--border)}
+/* countdown */
+.countdown-ring{display:flex;align-items:center;justify-content:center;gap:28px;padding:20px 0}
+.ring-item{text-align:center}
+.ring-num{font-size:42px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.ring-label{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.8px}
+.ring-div{font-size:32px;color:var(--border2);margin-top:-8px}
+/* urgency bar */
+.urgency-bar{height:8px;border-radius:4px;background:var(--border);overflow:hidden;margin:10px 0 4px}
+.urgency-fill{height:100%;border-radius:4px;transition:width .6s}
+/* metric box */
+.mb{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.mb-label{font-size:9px;font-weight:600;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.mb-val{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.mb-sub{font-size:10px;color:var(--muted);margin-top:3px}
+.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}.cyan{color:var(--accent)}
+/* roll comparison table */
+.rtable{width:100%;border-collapse:collapse;font-size:12px}
+.rtable th{font-size:9px;font-weight:700;letter-spacing:.8px;color:var(--muted);text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--border);text-align:left}
+.rtable td{padding:9px 10px;border-bottom:1px solid rgba(26,45,74,.4);vertical-align:middle}
+.rtable tr:last-child td{border-bottom:none}
+.rtable tbody tr:hover td{background:var(--s2)}
+.rtable tbody tr.best td{background:rgba(16,185,129,.06);border-bottom:1px solid rgba(16,185,129,.15)}
+.rec{background:var(--green);color:#fff;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700}
+/* form */
+.fg{margin-bottom:11px}
+.fl{font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;display:block}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+input[type=number],input[type=text],select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:7px;font-size:13px;outline:none;transition:border-color .2s}
+input:focus,select:focus{border-color:var(--accent)}
+.btn-primary{width:100%;padding:10px;background:linear-gradient(135deg,var(--yellow),var(--orange,#f97316));color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px}
+.btn-primary:hover{opacity:.88}
+/* interest chart */
+.int-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(26,45,74,.4)}
+.int-row:last-child{border-bottom:none}
+.int-month{font-size:11px;font-weight:600}
+.int-bar-wrap{flex:1;margin:0 12px;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.int-bar{height:100%;background:var(--yellow);border-radius:3px}
+.int-val{font-size:11px;font-weight:600;color:var(--yellow);font-variant-numeric:tabular-nums}
+/* ai box */
+.ai-box{background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:13px;font-size:12px;line-height:1.7;color:#b8d4f0;min-height:52px}
+.loading{display:flex;gap:4px;align-items:center}
+.loading span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bop 1.2s infinite}
+.loading span:nth-child(2){animation-delay:.2s}.loading span:nth-child(3){animation-delay:.4s}
+@keyframes bop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+/* alert */
+.alert{border-radius:8px;padding:11px 14px;font-size:12px;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px}
+.alert-red{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+.alert-yellow{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);color:#fcd34d}
+.alert-green{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);color:#6ee7b7}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+@media(max-width:800px){.grid2,.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="h-title">📦 Box Spread 到期管理</div>
+    <div class="h-sub">利率比較 · 展延成本試算 · IB 下單格式</div>
+  </div>
+  <span class="badge">⚠️ 189天後到期</span>
+</header>
+
+<div class="wrap">
+
+<!-- ALERT -->
+<div class="alert alert-yellow" id="main-alert">
+  <span style="font-size:18px;flex-shrink:0">⏰</span>
+  <div>
+    <strong>建議在 2026/10 月前評估新 Box</strong>——目前距到期 189 天，最佳展延窗口為到期前 60–90 天（約 2026/9/18 起）。目標新利率 &lt; 4.3%（現行 4.15%）。
+  </div>
+</div>
+
+<!-- COUNTDOWN -->
+<div class="card">
+  <div class="ct">⏱️ 距到期倒數</div>
+  <div class="countdown-ring" id="countdown"></div>
+  <div class="urgency-bar"><div class="urgency-fill" id="urgency-fill"></div></div>
+  <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted)">
+    <span>⚡ 開倉日 2025/12 估</span>
+    <span id="urgency-label">🟡 進入規劃期（60–90天前展延）</span>
+    <span>🔴 到期 2026/12/17</span>
+  </div>
+</div>
+
+<!-- CURRENT BOX METRICS -->
+<div class="sep">現有 Box Spread 數據</div>
+<div class="grid3">
+  <div class="mb">
+    <div class="mb-label">借款餘額</div>
+    <div class="mb-val yellow">NT$1,540,732</div>
+    <div class="mb-sub">≈ $48,640 USD</div>
+  </div>
+  <div class="mb">
+    <div class="mb-label">借款利率</div>
+    <div class="mb-val red">4.15% / 年</div>
+    <div class="mb-sub">每月利息 ≈ NT$5,322</div>
+  </div>
+  <div class="mb">
+    <div class="mb-label">到期日</div>
+    <div class="mb-val yellow">2026/12/17</div>
+    <div class="mb-sub">歐式選擇權，不可提前指派</div>
+  </div>
+  <div class="mb">
+    <div class="mb-label">剩餘利息支出</div>
+    <div class="mb-val red" id="remaining-interest">計算中...</div>
+    <div class="mb-sub">至到期日累計</div>
+  </div>
+  <div class="mb">
+    <div class="mb-label">保證金佔用</div>
+    <div class="mb-val">~NT$154萬</div>
+    <div class="mb-sub">佔 EL 的 45%（需監控）</div>
+  </div>
+  <div class="mb">
+    <div class="mb-label">每日利息</div>
+    <div class="mb-val yellow">NT$175</div>
+    <div class="mb-sub">$5.53 USD / 天</div>
+  </div>
+</div>
+
+<div class="grid2">
+
+<!-- LEFT: INTEREST ACCUMULATION -->
+<div>
+  <div class="sep">利息累積預測（至到期）</div>
+  <div class="card" style="margin-bottom:0">
+    <div class="ct">📅 逐月利息負擔</div>
+    <div id="interest-chart"></div>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px">
+      <span style="color:var(--muted)">剩餘總利息支出</span>
+      <span style="font-weight:700;color:var(--red)" id="total-interest-remaining">NT$33,413</span>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT: ROLLOVER COMPARISON -->
+<div>
+  <div class="sep">展延方案試算</div>
+  <div class="card" style="margin-bottom:0">
+    <div class="ct">🔄 新 Box 利率比較</div>
+    <div class="fg">
+      <label class="fl">展延目標金額（NT$）</label>
+      <input type="number" id="roll-amount" value="1540732" step="10000">
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label class="fl">新 Box 到期日</label>
+        <input type="text" id="new-exp" value="2027/12/19">
+      </div>
+      <div class="fg">
+        <label class="fl">新 Box 預計利率（%）</label>
+        <input type="number" id="new-rate" value="4.00" step="0.01">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">USD/TWD 匯率</label>
+      <input type="number" id="fx-rate" value="31.68" step="0.01">
+    </div>
+    <button class="btn-primary" onclick="calcRollover()">⚡ 計算展延方案</button>
+    <div id="rollover-result" style="margin-top:14px"></div>
+  </div>
+</div>
+
+</div><!-- /grid2 -->
+
+<!-- RATE COMPARISON TABLE -->
+<div class="sep">利率方案比較表</div>
+<div class="card">
+  <div class="ct">📊 各借款利率 vs Box Spread</div>
+  <table class="rtable" id="rate-table"></table>
+</div>
+
+<!-- IB ORDER FORMAT -->
+<div class="sep">IB 新 Box 下單格式</div>
+<div class="card">
+  <div class="ct">📋 SPX Box Spread 建倉參考</div>
+  <div style="background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25);border-radius:7px;padding:9px 12px;font-size:11px;color:#fca5a5;margin-bottom:12px">
+    ⚠️ Box Spread = Delta 0 / Gamma 0，歐式選擇權<strong>絕對無法被提前指派</strong>。Mid-term 帳面損益為假象，唯一風險是保證金佔用壓力。
+  </div>
+  <div id="ib-box-order"></div>
+</div>
+
+<!-- ANI COMMENT -->
+<div class="sep">Ani 策略建議</div>
+<div class="card">
+  <div class="ai-box" id="ani-box">
+    <div class="loading"><span></span><span></span><span></span></div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+const TODAY = new Date('2026-06-11');
+const EXPIRY = new Date('2026-12-17');
+const BALANCE_TWD = 1540732;
+const BALANCE_USD = 48640;
+const RATE = 0.0415;
+const DAILY_INT_TWD = BALANCE_TWD * RATE / 365;
+const FX = 31.68;
+
+// ── COUNTDOWN ──
+function renderCountdown() {
+  const diff = EXPIRY - TODAY;
+  const days = Math.floor(diff / 86400000);
+  const months = Math.floor(days / 30);
+  const remDays = days % 30;
+
+  document.getElementById('countdown').innerHTML = `
+    <div class="ring-item"><div class="ring-num yellow">${months}</div><div class="ring-label">月</div></div>
+    <div class="ring-div">:</div>
+    <div class="ring-item"><div class="ring-num yellow">${remDays}</div><div class="ring-label">天</div></div>
+    <div class="ring-div" style="font-size:20px;color:var(--muted);margin-top:0">→</div>
+    <div class="ring-item"><div class="ring-num" style="font-size:20px;color:var(--muted)">2026/12/17</div><div class="ring-label">到期日</div></div>`;
+
+  // Urgency fill: 365 days total → fill from right
+  const totalDays = 365;
+  const elapsed = totalDays - days;
+  const pct = Math.min(elapsed / totalDays * 100, 100);
+  const fill = document.getElementById('urgency-fill');
+  fill.style.width = pct + '%';
+  fill.style.background = days > 120 ? 'var(--green)' : days > 60 ? 'var(--yellow)' : 'var(--red)';
+
+  const lbl = document.getElementById('urgency-label');
+  lbl.textContent = days > 120 ? `🟢 充裕期（${days}天）` : days > 60 ? `🟡 規劃期：建議開始評估展延（${days}天）` : `🔴 緊急：立即執行展延（${days}天）`;
+  lbl.style.color = days > 120 ? 'var(--green)' : days > 60 ? 'var(--yellow)' : 'var(--red)';
+}
+
+// ── INTEREST CHART ──
+function renderInterestChart() {
+  const months = [];
+  let d = new Date(TODAY);
+  let cum = 0;
+  while (d <= EXPIRY) {
+    const m = d.toLocaleDateString('zh-TW', {year:'2-digit', month:'2-digit'});
+    const daysInMonth = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+    const int = Math.round(DAILY_INT_TWD * daysInMonth);
+    cum += int;
+    months.push({ m, int, cum });
+    d = new Date(d.getFullYear(), d.getMonth()+1, 1);
+  }
+
+  const maxInt = Math.max(...months.map(x => x.int));
+  document.getElementById('interest-chart').innerHTML = months.map(x => `
+    <div class="int-row">
+      <span class="int-month">${x.m}</span>
+      <div class="int-bar-wrap"><div class="int-bar" style="width:${x.int/maxInt*100}%"></div></div>
+      <span class="int-val">NT$${x.int.toLocaleString()}</span>
+    </div>`).join('');
+
+  const totalRemaining = Math.round(DAILY_INT_TWD * Math.floor((EXPIRY - TODAY) / 86400000));
+  document.getElementById('total-interest-remaining').textContent = `NT$${totalRemaining.toLocaleString()}`;
+  document.getElementById('remaining-interest').textContent = `NT$${totalRemaining.toLocaleString()}`;
+}
+
+// ── RATE COMPARISON TABLE ──
+function renderRateTable() {
+  const items = [
+    { name:'元大房貸', rate:2.60, type:'房貸', note:'2028年清償，固定還款' },
+    { name:'群益質押', rate:2.58, type:'質借', note:'可展延，僅繳息' },
+    { name:'土銀信貸', rate:2.165, type:'信貸', note:'2028年清償' },
+    { name:'新 Box（目標）', rate:4.00, type:'Box', note:'2026/10前評估', best:false },
+    { name:'現有 Box 4.15%', rate:4.15, type:'Box', note:'12/17到期', current:true },
+    { name:'新 Box（上限）', rate:4.30, type:'Box', note:'若超過4.3%不如還款', warn:true },
+  ];
+
+  const monthlyInt = (r, amt) => Math.round(amt * r / 100 / 12);
+
+  document.getElementById('rate-table').innerHTML = `
+    <thead><tr>
+      <th>借款名稱</th><th>年利率</th><th>月利息（NT$154萬）</th><th>年利息</th><th>vs 現有Box</th><th>備註</th>
+    </tr></thead>
+    <tbody>${items.map(i => {
+      const mi = monthlyInt(i.rate, BALANCE_TWD);
+      const yi = mi * 12;
+      const diff = mi - monthlyInt(4.15, BALANCE_TWD);
+      const diffStr = diff === 0 ? '—' : (diff > 0 ? `+NT$${diff.toLocaleString()}` : `-NT${Math.abs(diff).toLocaleString()}`);
+      const diffColor = diff > 0 ? 'var(--red)' : diff < 0 ? 'var(--green)' : 'var(--muted)';
+      const rowClass = i.best ? 'best' : '';
+      return `<tr class="${rowClass}" style="${i.current ? 'background:rgba(245,158,11,.05)' : i.warn ? 'background:rgba(239,68,68,.04)' : ''}">
+        <td style="font-weight:600">${i.name}${i.current ? ' ◀' : ''}</td>
+        <td style="color:${i.rate > 4.15 ? 'var(--red)' : i.rate < 3 ? 'var(--green)' : 'var(--yellow)'};font-weight:600">${i.rate}%</td>
+        <td>NT$${mi.toLocaleString()}</td>
+        <td>NT$${yi.toLocaleString()}</td>
+        <td style="color:${diffColor};font-weight:600">${diffStr}</td>
+        <td style="font-size:10px;color:var(--muted)">${i.note}</td>
+      </tr>`;
+    }).join('')}</tbody>`;
+}
+
+// ── ROLLOVER CALCULATOR ──
+function calcRollover() {
+  const amt = parseFloat(document.getElementById('roll-amount').value);
+  const newExpStr = document.getElementById('new-exp').value;
+  const newRate = parseFloat(document.getElementById('new-rate').value) / 100;
+  const fx = parseFloat(document.getElementById('fx-rate').value);
+  const newExp = new Date(newExpStr.replace(/\//g,'-'));
+  const newDays = Math.round((newExp - EXPIRY) / 86400000);
+  const curDaysLeft = Math.round((EXPIRY - TODAY) / 86400000);
+
+  // Cost of current box remaining
+  const curRemainingCost = Math.round(amt * RATE * curDaysLeft / 365);
+  // Cost of new box
+  const newDaysTotal = Math.round((newExp - TODAY) / 86400000);
+  const newBoxCost = Math.round(amt * newRate * newDaysTotal / 365);
+  const saving = Math.round(amt * (RATE - newRate) * newDaysTotal / 365);
+
+  const breakeven = saving > 0 ? '✅ 節省利息' : '⚠️ 利率較高，無節省';
+
+  document.getElementById('rollover-result').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="mb"><div class="mb-label">新 Box 期限</div><div class="mb-val cyan">${newDays} 天</div><div class="mb-sub">${EXPIRY.toLocaleDateString('zh-TW')} → ${newExp.toLocaleDateString('zh-TW')}</div></div>
+      <div class="mb"><div class="mb-label">新 Box 總利息</div><div class="mb-val yellow">NT$${newBoxCost.toLocaleString()}</div><div class="mb-sub">${newRate*100}% × ${newDaysTotal}天</div></div>
+      <div class="mb"><div class="mb-label">vs 現有利率節省</div><div class="mb-val ${saving > 0 ? 'green' : 'red'}">${saving > 0 ? '+' : ''}NT$${saving.toLocaleString()}</div><div class="mb-sub">${breakeven}</div></div>
+      <div class="mb"><div class="mb-label">月均利息</div><div class="mb-val">NT$${Math.round(amt * newRate / 12).toLocaleString()}</div><div class="mb-sub">vs 現在 NT$${Math.round(amt * RATE / 12).toLocaleString()}</div></div>
+    </div>`;
+
+  renderIBOrder(amt, fx, newRate, newExp);
+}
+
+// ── IB ORDER FORMAT ──
+function renderIBOrder(amt, fx, rate, exp) {
+  const amtUSD = Math.round(amt / fx);
+  const expFmt = exp ? exp.toLocaleDateString('zh-TW') : '2027/12/19';
+  const expCode = exp ? (String(exp.getFullYear()).slice(2) + String(exp.getMonth()+1).padStart(2,'0') + String(exp.getDate()).padStart(2,'0')) : '271219';
+  // Approximate strikes for a box of this size
+  const low = 5000, high = Math.round(5000 + amtUSD / 100);
+
+  document.getElementById('ib-box-order').innerHTML = `
+    <div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px;font-family:'SF Mono','Fira Code',monospace;font-size:12px;line-height:1.8;color:#93c5fd;margin-bottom:10px">
+      <div style="color:var(--muted);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;font-family:inherit">TWS → New Order → Combo（4-Leg Box）</div>
+      <div>標的　　　: <strong>SPX（歐式指數選擇權）</strong></div>
+      <div>借款金額　: ~$${amtUSD.toLocaleString()} USD</div>
+      <div>目標利率　: ${rate ? (rate*100).toFixed(2) : '4.00'}%</div>
+      <div>到期日　　: ${expFmt}</div>
+      <div>───────────────────────</div>
+      <div>Leg 1 (BUY)　: SPX ${expCode} ${low} C</div>
+      <div>Leg 2 (SELL)　: SPX ${expCode} ${high} C</div>
+      <div>Leg 3 (SELL)　: SPX ${expCode} ${low} P</div>
+      <div>Leg 4 (BUY)　: SPX ${expCode} ${high} P</div>
+      <div>───────────────────────</div>
+      <div>Terminal Value : $(${high} - ${low}) × 100 = <strong>$${(high-low)*100}</strong> USD（鎖定）</div>
+      <div>有效借款金額 : 現值 ÷ (1 + r × T/365)</div>
+    </div>
+    <div style="background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:7px;padding:9px 12px;font-size:11px;color:#67e8f9">
+      💡 Strike 範圍需根據實際 SPX 水平與你想借的金額計算。建議在 TWS 的 Option Chain 確認 Ask 價格後調整 Strike，使現值接近目標借款金額。
+    </div>`;
+}
+
+// ── ANI COMMENT ──
+async function getAniComment() {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:`你是 Ani，Allen 的選擇權策略顧問。Box Spread 核心規則：①歐式SPX Box = Delta0/Gamma0，絕對不能提前指派②帳面損益為假象③唯一風險=保證金佔用壓迫EL④利率目標<4.3%。簡潔直接，中英混用。`,
+        messages:[{role:'user',content:`Allen 的 Box Spread 狀況：借款 NT$154萬（$48,640 USD），利率 4.15%，2026/12/17 到期（189天後），每月利息 NT$5,322。帳戶 Excess Liquidity NT$107,835（42.8% NLV），Box 保證金約佔 EL 45%。2026/10月前評估展延，目標利率 <4.3%。給 3 點評語：①現在需要立即行動嗎？②展延時機建議③利率談判策略。`}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    document.getElementById('ani-box').innerHTML = text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  } catch(e) {
+    document.getElementById('ani-box').textContent = '⚠️ AI 評語載入失敗';
+  }
+}
+
+// INIT
+renderCountdown();
+renderInterestChart();
+renderRateTable();
+renderIBOrder(BALANCE_TWD, FX, 0.04, new Date('2027-12-19'));
+getAniComment();
+</script>
+</body>
+</html>
