@@ -352,6 +352,14 @@
 
 <script>
 // ─────────────────────────────────────────
+// GAS PROXY CONFIG（架構 B：純快取中繼站）
+// ─────────────────────────────────────────
+const GAS_PROXY_URL = (()=>{
+  try { return sessionStorage.getItem('gas_proxy_url') || 'https://script.google.com/macros/s/AKfycbzblEAe7HRXbhb-ZwWyIy-eihEN8fzSeRxz_srM2KTh_aJEvBs1C3zOMGcY3DAZ6XOX/exec'; }
+  catch(e){ return 'https://script.google.com/macros/s/AKfycbzblEAe7HRXbhb-ZwWyIy-eihEN8fzSeRxz_srM2KTh_aJEvBs1C3zOMGcY3DAZ6XOX/exec'; }
+})();
+
+// ─────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────
 let accountData = null;
@@ -364,76 +372,81 @@ const USD_TWD = 31.68;
 // IB DATA LOADER
 // ─────────────────────────────────────────
 async function loadDashboard() {
+  // ── 架構 B：從 GAS 雲端快照拉取，不直連 Anthropic API ──
+  // IB 數據由 Claude.ai 對話框取得後打包 JSON → 雲端同步面板推送 → 此處拉取
   const btn = document.getElementById('refresh-btn');
   btn.disabled = true;
-  btn.textContent = '載入中...';
+  btn.textContent = '拉取中...';
 
   try {
-    // Call Claude with IBKR MCP to fetch account data
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `You are a data extraction assistant. Call the IBKR MCP tools to fetch account data, then return ONLY a JSON object with no markdown, no explanation.
+    // 優先讀 localStorage（hub.html 廣播的即時數據）
+    const local = (() => {
+      try { return JSON.parse(localStorage.getItem('hub_sync_data') || '{}'); } catch(e) { return {}; }
+    })();
 
-Call get_account_summary first, then get_account_positions.
-
-Return exactly this JSON structure:
-{
-  "summary": {
-    "nlv": <number in USD>,
-    "excess_liquidity": <number>,
-    "maintenance_margin": <number>,
-    "initial_margin": <number>,
-    "available_funds": <number>,
-    "leverage": <number>,
-    "cash_balance": <number>
-  },
-  "positions": [
-    {
-      "symbol": <string>,
-      "description": <string>,
-      "qty": <number, negative=short>,
-      "market_price": <number>,
-      "market_value": <number>,
-      "unrealized_pnl": <number>,
-      "asset_type": <"OPT"|"STK"|"FUT">
+    if (local.nlv) {
+      // localStorage 有數據 → 直接用
+      applySnapshot(local);
+      const age = Math.round((Date.now() - local.ts) / 1000);
+      document.getElementById('update-time').textContent =
+        (local.isLive ? '✅ Hub 即時數據' : '📋 Hub 快取') + ' · ' +
+        (age < 60 ? age + '秒前' : Math.round(age/60) + '分前');
+    } else {
+      // localStorage 無數據 → 從 GAS 雲端拉取
+      const res = await fetch(GAS_PROXY_URL);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      if (d.error) throw new Error(d.message || d.error);
+      applySnapshot(d);
+      localStorage.setItem('hub_sync_data', JSON.stringify(d));
+      const age = d.ts ? Math.round((Date.now() - d.ts) / 1000) : 0;
+      document.getElementById('update-time').textContent =
+        '☁️ GAS 雲端 · ' + (age < 60 ? age + '秒前' : Math.round(age/60) + '分前');
     }
-  ]
-}`,
-        messages: [{ role: 'user', content: 'Fetch my IB account summary and all positions now. Return only JSON.' }],
-        mcp_servers: [{ type: 'url', url: 'https://api.ibkr.com/v1/api/mcp', name: 'ibkr' }]
-      })
-    });
-
-    const data = await response.json();
-
-    // Extract JSON from response
-    let jsonText = '';
-    for (const block of data.content) {
-      if (block.type === 'text') jsonText += block.text;
-    }
-
-    // Parse JSON (strip any markdown fences)
-    jsonText = jsonText.replace(/```json\n?|```\n?/g, '').trim();
-    const parsed = JSON.parse(jsonText);
-
-    accountData = parsed.summary;
-    positionsData = parsed.positions;
-
-    renderDashboard();
-    document.getElementById('update-time').textContent = '更新於 ' + new Date().toLocaleTimeString('zh-TW');
 
   } catch (err) {
-    console.error('IB load error:', err);
-    // Fall back to demo data so UI is usable
+    console.warn('雲端拉取失敗，使用快取示範數據:', err.message);
     loadDemoData();
   }
 
   btn.disabled = false;
   btn.textContent = '⟳ 更新數據';
+}
+
+function applySnapshot(d) {
+  if (d.nlv) {
+    accountData = {
+      nlv:                d.nlv,
+      excess_liquidity:   d.excess_liquidity,
+      maintenance_margin: d.maintenance_margin,
+      initial_margin:     (d.maintenance_margin || 0) * 1.1,
+      available_funds:    d.available_funds,
+      leverage:           d.leverage,
+      cash_balance:       d.cash_balance || 0,
+    };
+  }
+  if (d.positions && d.positions.length) positionsData = d.positions;
+  // 渲染 dashboard 評語（ani_comments.dashboard）
+  const comment = d.ani_comments && d.ani_comments.dashboard;
+  if (comment) renderDashboardComment(comment);
+  renderDashboard();
+}
+
+function renderDashboardComment(text) {
+  // 找頁面上的 Ani 評語區塊（若存在）並以打字機效果渲染
+  let el = document.getElementById('dashboard-ani-comment');
+  if (!el) return;
+  el.innerHTML = '';
+  const full = text.replace(/
+/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  const tmp = document.createElement('div');
+  tmp.innerHTML = full;
+  const plainText = tmp.textContent || '';
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i >= plainText.length) { clearInterval(iv); el.innerHTML = full; return; }
+    el.textContent = plainText.slice(0, ++i);
+  }, 14);
 }
 
 function loadDemoData() {
@@ -766,6 +779,7 @@ async function sendMessage() {
 注意：Excess Liquidity ${accountData.excess_liquidity/accountData.nlv < 0.2 ? '< 20% → 只可開BPS廣基指數，禁止CSP/裸賣' : '正常 → 可評估新倉'}
 ` : '（請先點「更新數據」獲取最新帳戶狀態）';
 
+    // ── 架構 B：Ani 聊天直連 Claude Artifacts API（此頁面在 Claude.ai 環境中執行）──
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -795,7 +809,8 @@ ${accountContext}
     });
 
     const data = await response.json();
-    const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
 
     conversationHistory.push({ role: 'assistant', content: text });
     document.getElementById(typingId)?.remove();
@@ -803,7 +818,12 @@ ${accountContext}
 
   } catch (err) {
     document.getElementById(typingId)?.remove();
-    addMessage('ai', '⚠️ 連線錯誤，請確認 API 可用。錯誤：' + err.message);
+    // 若 CORS 錯誤（在 GitHub Pages 上執行），顯示引導訊息
+    const msg = err.message.includes('CORS') || err.message.includes('fetch')
+      ? '⚠️ 此聊天室需在 Claude.ai 環境中使用。
+若你在 GitHub Pages 瀏覽，請切換到 Hub 主頁的「🤖 Ani 顧問」tab。'
+      : '⚠️ 連線錯誤：' + err.message;
+    addMessage('ai', msg);
   }
 
   sendBtn.disabled = false;
@@ -844,15 +864,7 @@ function loadSync() {
     const raw = localStorage.getItem('hub_sync_data');
     if (!raw) return false;
     const d = JSON.parse(raw);
-    accountData = Object.assign(accountData || {}, {
-      nlv:                d.nlv,
-      excess_liquidity:   d.excess_liquidity,
-      maintenance_margin: d.maintenance_margin,
-      available_funds:    d.available_funds,
-      leverage:           d.leverage,
-    });
-    if (d.positions && d.positions.length) positionsData = d.positions;
-    renderDashboard();
+    applySnapshot(d);
     const age = Math.round((Date.now() - d.ts) / 1000);
     const src = d.isLive ? '✅ Hub 即時同步' : '📋 Hub 快取數據';
     document.getElementById('update-time').textContent = src + ' · ' + (age < 60 ? age + '秒前' : Math.round(age/60) + '分前');
