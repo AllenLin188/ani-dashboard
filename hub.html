@@ -264,6 +264,27 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
       <span id="ib-label" style="color:var(--muted)">未連接</span>
     </div>
     <button id="sync-btn" onclick="syncIB()">⟳ 完整同步</button>
+    <button id="gh-push-btn" onclick="pushToGitHub()" style="padding:5px 13px;background:var(--s2);color:var(--text);border:1px solid var(--border2);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;transition:all .2s" title="推送所有檔案到 GitHub Pages">🚀 推送 GitHub</button>
+    <span id="gh-status" style="font-size:10px;color:var(--muted);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
+  </div>
+</div>
+
+<!-- ══ GITHUB TOKEN MODAL ══ -->
+<div id="token-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--s1);border:1px solid var(--border2);border-radius:12px;padding:28px 32px;width:420px;max-width:92vw">
+    <h3 style="font-size:15px;margin-bottom:8px">🔑 輸入 GitHub Personal Access Token</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+      Token 只存在本次 Session（關分頁即消失）。<br>
+      需要 <code style="background:var(--s2);padding:1px 5px;border-radius:3px">Contents: Read &amp; Write</code> 權限。<br>
+      <a href="https://github.com/settings/tokens?type=beta" target="_blank" style="color:var(--accent)">→ GitHub 產生新 Token（Fine-grained PAT）</a>
+    </p>
+    <input id="token-input" type="password" placeholder="github_pat_... 或 ghp_..." autocomplete="off"
+      style="width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:7px;font-size:13px;margin-bottom:6px;outline:none"/>
+    <div id="token-hint" style="font-size:11px;color:var(--red);min-height:16px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeTokenModal()" style="padding:7px 16px;background:transparent;border:1px solid var(--border2);color:var(--muted);border-radius:6px;cursor:pointer;font-size:12px">取消</button>
+      <button onclick="saveToken()" style="padding:7px 16px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700">儲存並推送</button>
+    </div>
   </div>
 </div>
 
@@ -581,31 +602,12 @@ async function syncIB() {
   }, 100);
 
   try {
-    // ── STEP 1+2: IB MCP → account + positions ──
+    // ── STEP 1+2: IB data via GAS Proxy (解決 CORS) ──
     stepIdx = 0;
-    const ibRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:4000,
-        system:`Call IBKR MCP: first get_account_summary, then get_account_positions.
-Return ONLY this JSON (no markdown):
-{
-  "summary":{"nlv":0,"excess_liquidity":0,"maintenance_margin":0,"available_funds":0,"leverage":0},
-  "positions":[{"symbol":"","description":"","qty":0,"market_price":0,"market_value":0,"unrealized_pnl":0,"asset_type":"OPT"}]
-}`,
-        messages:[{role:'user',content:'Fetch account summary and all positions. Return only JSON.'}],
-        mcp_servers:[{type:'url',url:'https://api.ibkr.com/v1/api/mcp',name:'ibkr'}]
-      })
-    });
-    const ibData = await ibRes.json();
-    let ibTxt = ibData.content.filter(b=>b.type==='text').map(b=>b.text).join('');
-    ibTxt = ibTxt.replace(/```json\n?|```\n?/g,'').trim();
-    // Extract first valid JSON object
-    const jsonMatch = ibTxt.match(/\{[\s\S]*\}/);
-    if(!jsonMatch) throw new Error('No JSON in IB response');
-    const ibParsed = JSON.parse(jsonMatch[0]);
+    const ibRes = await fetch(GAS_PROXY_URL + '?action=ibkr_sync');
+    if (!ibRes.ok) throw new Error('GAS proxy HTTP ' + ibRes.status);
+    const ibParsed = await ibRes.json();
+    if (ibParsed.error) throw new Error(ibParsed.error);
 
     // Update account state
     Object.assign(S, ibParsed.summary, {isLive:true});
@@ -918,18 +920,18 @@ async function sendChat() {
 現有倉位需注意：NVDA CSP $215 Delta 0.605（>0.50 危險），TSLA CC $460 獲利 52.8%，VTI CC $370 獲利 50.9%，QQQ BPS $680 虧損 54.6%。`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(GAS_PROXY_URL, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        action: 'claude_chat',
         system: `你是 Ani，Allen 的選擇權策略顧問兼風險煞車。核心規則：①SPX Box=Delta0不計風控②EL<20%禁CSP/CC③IB無Margin Call直接砍倉④CC滾倉必須Combo Order同步執行⑤TSLA $500賣100股還債,$900賣100股交屋⑥TIMS個股±15%,廣基+6/-8%。Allen 2028交屋目標，資金缺口NT$438萬。回答：中英混用，術語英文，精簡直接，數字優先。\n\n${ctx}`,
         messages: chatHistory
       })
     });
     const data = await res.json();
-    const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    if (data.error) throw new Error(data.error);
+    const text = data.text || data.content?.filter(b=>b.type==='text').map(b=>b.text).join('') || '（無回應）';
     chatHistory.push({role:'assistant', content:text});
     document.getElementById(typingId)?.remove();
     addMsg('ai', text);
@@ -1028,6 +1030,124 @@ function broadcastSync() {
     console.warn('broadcastSync failed:', e);
   }
 }
+
+// ════════════════════════════════════════════════
+// GITHUB PUSH
+// ════════════════════════════════════════════════
+const GH_CONFIG = {
+  owner:  'AllenLin188',
+  repo:   'ani-dashboard',
+  branch: 'main',
+  get token() { return sessionStorage.getItem('gh_token') || ''; },
+};
+
+// 只推送 hub.html（其他子頁面從各自本機推）
+const GH_FILES = ['hub.html'];
+
+async function ghGetSHA(filename) {
+  const url = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${filename}?ref=${GH_CONFIG.branch}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `token ${GH_CONFIG.token}`, Accept: 'application/vnd.github.v3+json' }
+  });
+  if (res.status === 404) return null;
+  const d = await res.json();
+  if (d.message && d.message.includes('Bad credentials')) throw new Error('401');
+  return d.sha || null;
+}
+
+async function ghPushFile(filename, fileContent) {
+  const sha = await ghGetSHA(filename);
+  const body = {
+    message: `Auto-sync ${filename} · ${new Date().toLocaleString('zh-TW')}`,
+    content: btoa(unescape(encodeURIComponent(fileContent))),
+    branch: GH_CONFIG.branch,
+  };
+  if (sha) body.sha = sha;
+  const res = await fetch(`https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${filename}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `token ${GH_CONFIG.token}`,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || res.status);
+  }
+  return res.json();
+}
+
+async function doPush() {
+  const btn = document.getElementById('gh-push-btn');
+  const status = document.getElementById('gh-status');
+  btn.disabled = true;
+  status.style.color = 'var(--yellow)';
+  status.textContent = '上傳中…';
+
+  try {
+    // 取得當前頁面的 HTML 內容
+    const htmlContent = document.documentElement.outerHTML;
+    await ghPushFile('hub.html', htmlContent);
+    status.textContent = '✅ 已推送 · ' + new Date().toLocaleTimeString('zh-TW');
+    status.style.color = 'var(--green)';
+  } catch(e) {
+    if (e.message.includes('401') || e.message.includes('Bad credentials')) {
+      sessionStorage.removeItem('gh_token');
+      status.textContent = '🔑 Token 無效';
+      status.style.color = 'var(--red)';
+      btn.disabled = false;
+      openTokenModal();
+      return;
+    }
+    status.textContent = '❌ ' + e.message.slice(0,40);
+    status.style.color = 'var(--red)';
+  }
+  btn.disabled = false;
+}
+
+function pushToGitHub() {
+  if (!sessionStorage.getItem('gh_token')) {
+    openTokenModal();
+    return;
+  }
+  doPush();
+}
+
+function openTokenModal() {
+  const m = document.getElementById('token-modal');
+  m.style.display = 'flex';
+  document.getElementById('token-hint').textContent = '';
+  setTimeout(() => document.getElementById('token-input').focus(), 100);
+}
+
+function closeTokenModal() {
+  document.getElementById('token-modal').style.display = 'none';
+  document.getElementById('token-input').value = '';
+}
+
+function saveToken() {
+  const val = document.getElementById('token-input').value.trim();
+  if (!val.startsWith('github_pat_') && !val.startsWith('ghp_')) {
+    document.getElementById('token-hint').textContent = '⚠️ 格式不對，應以 github_pat_ 或 ghp_ 開頭';
+    return;
+  }
+  sessionStorage.setItem('gh_token', val);
+  closeTokenModal();
+  doPush();
+}
+
+// Close modal on backdrop click
+document.getElementById('token-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeTokenModal();
+});
+
+// Enter key shortcut
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('token-modal').style.display === 'flex') saveToken();
+  if (e.key === 'Escape') closeTokenModal();
+});
 
 // ════════════════════════════════════════════════
 // INIT
