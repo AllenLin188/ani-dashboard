@@ -838,6 +838,34 @@ function addTyping(id) {
 loadDemoData(); // Load last known data immediately
 // Uncomment below to auto-fetch live data on load:
 // loadDashboard();
+// ── Hub Sync Receiver ──────────────────────────
+function loadSync() {
+  try {
+    const raw = localStorage.getItem('hub_sync_data');
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    accountData = Object.assign(accountData || {}, {
+      nlv:                d.nlv,
+      excess_liquidity:   d.excess_liquidity,
+      maintenance_margin: d.maintenance_margin,
+      available_funds:    d.available_funds,
+      leverage:           d.leverage,
+    });
+    if (d.positions && d.positions.length) positionsData = d.positions;
+    renderDashboard();
+    const age = Math.round((Date.now() - d.ts) / 1000);
+    const src = d.isLive ? '✅ Hub 即時同步' : '📋 Hub 快取數據';
+    document.getElementById('update-time').textContent = src + ' · ' + (age < 60 ? age + '秒前' : Math.round(age/60) + '分前');
+    return true;
+  } catch(e) { return false; }
+}
+
+window.addEventListener('storage', e => {
+  if (e.key === 'hub_sync_data') loadSync();
+});
+
+loadSync();
+
 </script>
 </body>
 </html>
