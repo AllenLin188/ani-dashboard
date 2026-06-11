@@ -167,7 +167,10 @@ select option{background:var(--s2)}
     </div>
     <span class="badge">v1.0</span>
   </div>
-  <div style="font-size:11px;color:var(--muted)">⚠️ CC 滾倉規則：必須同步執行買賣，禁止分開兩腿</div>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <div style="font-size:11px;color:var(--muted)">⚠️ CC 滾倉規則：必須同步執行買賣，禁止分開兩腿</div>
+    <span id="sync-badge" style="font-size:11px;color:var(--muted)">⏳ 等待 Hub 同步...</span>
+  </div>
 </header>
 
 <div class="wrap">
@@ -914,6 +917,66 @@ async function getAniComment(r) {
     el.textContent = '⚠️ AI 評語載入失敗';
   }
 }
+
+// ── Hub Sync Receiver ──────────────────────────
+function loadSync() {
+  try {
+    const raw = localStorage.getItem('hub_sync_data');
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+
+    // Update account display if elements exist
+    const nlvEl = document.getElementById('acct-nlv');
+    const elEl  = document.getElementById('acct-el');
+    const elPctEl = document.getElementById('acct-el-pct');
+    if (nlvEl) nlvEl.textContent = '$' + Math.round(d.nlv).toLocaleString();
+    if (elEl)  elEl.textContent  = '$' + Math.round(d.excess_liquidity).toLocaleString();
+    const elPct = (d.excess_liquidity / d.nlv * 100);
+    if (elPctEl) elPctEl.textContent = elPct.toFixed(1) + '% NLV · ' + (elPct < 20 ? '⚠️ 僅BPS' : '✅ 可開新倉');
+
+    // Sync PRESETS with live underlying prices from positions
+    if (d.positions && d.positions.length) {
+      const priceMap = {};
+      d.positions.forEach(p => {
+        if (p.underlying && p.sym) priceMap[p.sym] = p.underlying;
+      });
+      // Update presets with live prices
+      const symMap = { 'tsla-cc':'TSLA','vti-cc':'VTI','nvda-cc':'NVDA','tsla-csp':'TSLA','iwm-bps':'IWM' };
+      Object.entries(symMap).forEach(([key, sym]) => {
+        if (priceMap[sym] && PRESETS[key]) {
+          if (key.includes('bps') || key.includes('BPS')) {
+            PRESETS[key].bUnderlying = priceMap[sym];
+          } else {
+            PRESETS[key].underlying = priceMap[sym];
+          }
+        }
+      });
+      // Sync current pnlPct into presets
+      d.positions.forEach(p => {
+        const k = (p.sym.toLowerCase() + '-' + p.strat.toLowerCase());
+        if (PRESETS[k]) {
+          PRESETS[k].curPrem = p.curPrem || PRESETS[k].curPrem;
+        }
+      });
+    }
+
+    // Show sync badge
+    const syncBadge = document.getElementById('sync-badge');
+    if (syncBadge) {
+      const age = Math.round((Date.now() - d.ts) / 1000);
+      syncBadge.textContent = (d.isLive ? '✅ Hub 即時' : '📋 Hub 快取') + ' · ' + (age < 60 ? age + '秒前' : Math.round(age/60) + '分前');
+      syncBadge.style.color = d.isLive ? 'var(--green)' : 'var(--yellow)';
+    }
+    return true;
+  } catch(e) { console.warn('loadSync error:', e); return false; }
+}
+
+window.addEventListener('storage', e => {
+  if (e.key === 'hub_sync_data') loadSync();
+});
+
+loadSync();
+
 </script>
 </body>
 </html>
