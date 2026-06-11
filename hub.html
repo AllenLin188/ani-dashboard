@@ -685,35 +685,13 @@ Return ONLY this JSON (no markdown):
       return sum + p.delta * p.qty * 100 * sign;
     }, 0);
 
-    // ── STEP 4: Stock prices + FX via Yahoo Finance ──
+    // ── STEP 4: Stock prices + FX via GAS Proxy (解決 CORS) ──
     stepIdx = 3;
-    try {
-      const symbols = ['TSLA','NVDA','VTI','QQQ','IWM','TWDUSD=X'];
-      const yfRes = await fetch(
-        `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(',')}&fields=regularMarketPrice`,
-        {headers:{'User-Agent':'Mozilla/5.0'}}
-      );
-      if(yfRes.ok) {
-        const yfData = await yfRes.json();
-        const quotes = yfData?.quoteResponse?.result || [];
-        quotes.forEach(q => {
-          const price = q.regularMarketPrice;
-          if(q.symbol === 'TSLA') S.tsla_price = price;
-          if(q.symbol === 'TWDUSD=X' && price > 0) S.usd_twd = parseFloat((1/price).toFixed(2));
-        });
-        // Update underlying prices in POSITIONS
-        quotes.forEach(q => {
-          POSITIONS.forEach(p => {
-            if(p.sym === q.symbol) p.underlying = q.regularMarketPrice;
-          });
-        });
-      }
-    } catch(yfErr) {
-      // Yahoo Finance CORS may block; silently continue
-      console.warn('Yahoo Finance fetch failed (CORS):', yfErr.message);
-    }
+    await fetchMarketPrices();
 
     setIBStatus(true);
+    await pushToSheets();   // ← 寫入 Google Sheets 存檔
+    broadcastSync();        // ← 廣播到子頁面
 
   } catch(e) {
     console.error('Full sync error:', e);
@@ -726,7 +704,7 @@ Return ONLY this JSON (no markdown):
   clearInterval(ticker);
   updateAll();
   btn.disabled = false;
-  btn.textContent = '⟳ 同步 IB';
+  btn.textContent = '⟳ 完整同步';
 }
 
 function setIBStatus(live) {
@@ -981,9 +959,81 @@ function addTyping(id) {
 }
 
 // ════════════════════════════════════════════════
+// GAS 市價代理 + Sheets 同步
+// ════════════════════════════════════════════════
+// ▼ 填入你的 GAS WebApp URL（Step 2 部署後取得）
+const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbzblEAe7HRXbhb-ZwWyIy-eihEN8fzSeRxz_srM2KTh_aJEvBs1C3zOMGcY3DAZ6XOX/exec';
+
+async function fetchMarketPrices() {
+  try {
+    const res = await fetch(GAS_PROXY_URL + '?symbols=TSLA,NVDA,QQQ,IWM,VTI,TWDUSD=X');
+    const data = await res.json();
+    if (data.TSLA?.price)  S.tsla_price = data.TSLA.price;
+    if (data.NVDA?.price)  S.nvda_price = data.NVDA.price;
+    if (data.QQQ?.price)   S.qqq_price  = data.QQQ.price;
+    if (data.IWM?.price)   S.iwm_price  = data.IWM.price;
+    if (data.VTI?.price)   S.vti_price  = data.VTI.price;
+    // TWD/USD 匯率
+    if (data['TWDUSD=X']?.price && data['TWDUSD=X'].price > 0) {
+      S.usd_twd = parseFloat((1 / data['TWDUSD=X'].price).toFixed(2));
+    }
+    // 同步更新 POSITIONS 的 underlying 價格
+    const priceMap = { TSLA: S.tsla_price, NVDA: S.nvda_price, QQQ: S.qqq_price, IWM: S.iwm_price, VTI: S.vti_price };
+    POSITIONS.forEach(p => { if (priceMap[p.sym]) p.underlying = priceMap[p.sym]; });
+    console.log('✅ 市價更新成功（GAS）', priceMap);
+  } catch(err) {
+    console.warn('市價抓取失敗（GAS proxy）:', err.message);
+  }
+}
+
+async function pushToSheets() {
+  try {
+    const res = await fetch(GAS_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nlv:                S.nlv,
+        excess_liquidity:   S.excess_liquidity,
+        maintenance_margin: S.maintenance_margin,
+        available_funds:    S.available_funds,
+        leverage:           S.leverage,
+        tsla_price:         S.tsla_price,
+        usd_twd:            S.usd_twd,
+      })
+    });
+    const result = await res.json();
+    console.log('✅ IB 數據已寫入 Sheets，目前共', result.rows, '筆記錄');
+  } catch(err) {
+    console.warn('Sheets 寫入失敗:', err.message);
+  }
+}
+
+function broadcastSync() {
+  const payload = {
+    ts: Date.now(),
+    isLive: S.isLive,
+    nlv:                S.nlv,
+    excess_liquidity:   S.excess_liquidity,
+    maintenance_margin: S.maintenance_margin,
+    available_funds:    S.available_funds,
+    leverage:           S.leverage,
+    usd_twd:    S.usd_twd,
+    tsla_price: S.tsla_price,
+    current_delta: S.current_delta,
+    positions: POSITIONS,
+  };
+  try {
+    localStorage.setItem('hub_sync_data', JSON.stringify(payload));
+  } catch(e) {
+    console.warn('broadcastSync failed:', e);
+  }
+}
+
+// ════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════
 updateAll();
+broadcastSync();
 </script>
 </body>
 </html>
