@@ -78,42 +78,6 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
 #sync-btn:hover{opacity:.85}
 #sync-btn:disabled{opacity:.4;cursor:not-allowed}
 
-/* Token Modal */
-#token-modal{
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
-  z-index:9999;align-items:center;justify-content:center;
-}
-#token-modal.show{display:flex;}
-#token-box{
-  background:var(--s1);border:1px solid var(--border2);border-radius:12px;
-  padding:24px;width:420px;max-width:90vw;
-}
-#token-box h3{margin:0 0 6px;font-size:15px;color:var(--text)}
-#token-box p{margin:0 0 16px;font-size:12px;color:var(--muted);line-height:1.6}
-#token-input{
-  width:100%;box-sizing:border-box;background:var(--s2);border:1px solid var(--border2);
-  color:var(--text);border-radius:6px;padding:8px 10px;font-size:12px;
-  font-family:monospace;margin-bottom:12px;
-}
-#token-input:focus{outline:none;border-color:var(--accent)}
-.token-btns{display:flex;gap:8px;justify-content:flex-end}
-.token-btns button{
-  padding:6px 16px;border:none;border-radius:6px;cursor:pointer;
-  font-size:12px;font-weight:600;
-}
-#token-save-btn{background:#238636;color:#fff}
-#token-cancel-btn{background:var(--s2);color:var(--muted)}
-#token-hint{font-size:10px;color:var(--muted);margin-top:8px}
-
-#gh-push-btn{
-  padding:5px 13px;background:#238636;color:#fff;
-  border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;
-  transition:opacity .2s
-}
-#gh-push-btn:hover{opacity:.85}
-#gh-push-btn:disabled{opacity:.4;cursor:not-allowed}
-#gh-status{font-size:10px;color:var(--muted);margin-left:4px}
-
 /* ══ ALERT BAR ══ */
 #alert-bar{
   background:rgba(239,68,68,.08);border-bottom:1px solid rgba(239,68,68,.25);
@@ -253,22 +217,6 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
 </head>
 <body>
 
-<!-- Token Modal -->
-<div id="token-modal">
-  <div id="token-box">
-    <h3>🔑 輸入 GitHub Personal Access Token</h3>
-    <p>Token 只存在本次瀏覽器 Session（關分頁即消失），<strong>不會寫入任何檔案</strong>。<br>
-    需要 <code>Contents: Read &amp; Write</code> 權限。<br>
-    <a href="https://github.com/settings/tokens?type=beta" target="_blank" style="color:var(--accent)">→ 到 GitHub 產生新 Token</a></p>
-    <input id="token-input" type="password" placeholder="github_pat_..." autocomplete="off" />
-    <div id="token-hint"></div>
-    <div class="token-btns">
-      <button id="token-cancel-btn" onclick="closeTokenModal()">取消</button>
-      <button id="token-save-btn" onclick="saveToken()">儲存並推送</button>
-    </div>
-  </div>
-</div>
-
 <!-- ══ TOPBAR ══ -->
 <div id="topbar">
   <div class="brand">
@@ -312,9 +260,7 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
       <div class="ib-status-dot" id="ib-dot"></div>
       <span id="ib-label" style="color:var(--muted)">未連接</span>
     </div>
-    <button id="sync-btn" onclick="syncIB()">⟳ 同步 IB</button>
-    <button id="gh-push-btn" onclick="pushToGitHub()">🚀 推送 GitHub</button>
-    <span id="gh-status"></span>
+    <button id="sync-btn" onclick="syncIB()">⟳ 完整同步</button>
   </div>
 </div>
 
@@ -522,28 +468,28 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
 // SHARED STATE
 // ════════════════════════════════════════════════
 const S = {
-  nlv: 241311.24,
-  excess_liquidity: 100359.53,
-  maintenance_margin: 140932.29,
-  available_funds: 85878.45,
-  leverage: 2.49,
-  current_delta: 878.2,
+  nlv: 251748.84,
+  excess_liquidity: 107834.87,
+  maintenance_margin: 143913.97,
+  available_funds: 92893.86,
+  leverage: 2.45,
+  current_delta: 80.5,
   usd_twd: 31.68,
-  tsla_price: 383.63,
+  tsla_price: 383.97,
   isLive: false,
 };
 
 // Known positions for scanner (from project data 2026-06-11)
 const POSITIONS = [
-  { sym:'TSLA', strat:'CC',  strike:460, qty:4,  origPrem:12.19, curPrem:4.28,  dte:36, delta:0.155, ivr:34, underlying:383.63, pnlPct:64.9 },
-  { sym:'VTI',  strat:'CC',  strike:370, qty:1,  origPrem:8.35,  curPrem:2.78,  dte:36, delta:0.201, ivr:45, underlying:359.43, pnlPct:66.7 },
-  { sym:'NVDA', strat:'CC',  strike:235, qty:1,  origPrem:3.05,  curPrem:1.54,  dte:36, delta:0.150, ivr:36, underlying:202.00, pnlPct:49.5 },
-  { sym:'TSLA', strat:'CSP', strike:370, qty:1,  origPrem:10.41, curPrem:18.79, dte:36, delta:0.450, ivr:34, underlying:383.63, pnlPct:-80.5 },
-  { sym:'NVDA', strat:'CSP', strike:215, qty:1,  origPrem:11.19, curPrem:19.88, dte:36, delta:0.605, ivr:36, underlying:202.00, pnlPct:-77.7 },
-  { sym:'VTI',  strat:'CSP', strike:340, qty:1,  origPrem:3.19,  curPrem:3.38,  dte:36, delta:0.167, ivr:45, underlying:359.43, pnlPct:-6.0 },
-  { sym:'IWM',  strat:'BPS', strike:272, qty:3,  origPrem:1.89,  curPrem:6.12,  dte:36, delta:0.200, ivr:46, underlying:283.80, pnlPct:-223.8 },
-  { sym:'IWM',  strat:'BPS', strike:268, qty:3,  origPrem:1.72,  curPrem:4.96,  dte:36, delta:0.175, ivr:46, underlying:283.80, pnlPct:-188.4 },
-  { sym:'QQQ',  strat:'BPS', strike:680, qty:1,  origPrem:3.79,  curPrem:20.53, dte:36, delta:0.280, ivr:78, underlying:698.61, pnlPct:-441.7 },
+  { sym:'TSLA', strat:'CC',  strike:460, qty:4,  origPrem:12.19, curPrem:5.75,  dte:36, delta:0.179, ivr:34, underlying:383.97, pnlPct:52.8 },
+  { sym:'VTI',  strat:'CC',  strike:370, qty:1,  origPrem:8.35,  curPrem:4.10,  dte:36, delta:0.376, ivr:45, underlying:359.92, pnlPct:50.9 },
+  { sym:'NVDA', strat:'CC',  strike:235, qty:1,  origPrem:3.05,  curPrem:2.44,  dte:36, delta:0.175, ivr:36, underlying:202.35, pnlPct:20.0 },
+  { sym:'TSLA', strat:'CSP', strike:370, qty:1,  origPrem:10.41, curPrem:14.60, dte:36, delta:0.333, ivr:34, underlying:383.97, pnlPct:-40.3 },
+  { sym:'NVDA', strat:'CSP', strike:215, qty:1,  origPrem:11.19, curPrem:15.50, dte:36, delta:0.605, ivr:36, underlying:202.35, pnlPct:-38.5 },
+  { sym:'VTI',  strat:'CSP', strike:340, qty:1,  origPrem:3.19,  curPrem:2.67,  dte:36, delta:0.167, ivr:45, underlying:359.92, pnlPct:16.3 },
+  { sym:'IWM',  strat:'BPS', strike:272, qty:3,  origPrem:1.89,  curPrem:2.11,  dte:36, delta:0.126, ivr:46, underlying:283.80, pnlPct:-11.6 },
+  { sym:'IWM',  strat:'BPS', strike:268, qty:3,  origPrem:1.72,  curPrem:1.53,  dte:36, delta:0.111, ivr:46, underlying:283.80, pnlPct:11.1 },
+  { sym:'QQQ',  strat:'BPS', strike:680, qty:1,  origPrem:3.79,  curPrem:5.86,  dte:36, delta:0.136, ivr:78, underlying:696.87, pnlPct:-54.6 },
   { sym:'SPX',  strat:'BOX', strike:0,   qty:1,  origPrem:0,     curPrem:0,     dte:189, delta:0, ivr:0, underlying:0, pnlPct:0 },
 ];
 
@@ -575,66 +521,205 @@ function switchTab(name) {
 }
 
 // ════════════════════════════════════════════════
-// IB SYNC
+// FULL SYNC ENGINE
 // ════════════════════════════════════════════════
-async function syncIB() {
-  const btn = document.getElementById('sync-btn');
-  btn.disabled = true; btn.textContent = '同步中...';
 
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: 'Call IBKR get_account_summary. Return ONLY JSON: {"nlv":number,"excess_liquidity":number,"maintenance_margin":number,"available_funds":number,"leverage":number}',
-        messages: [{role:'user',content:'Fetch account summary. Return only JSON.'}],
-        mcp_servers: [{type:'url',url:'https://api.ibkr.com/v1/api/mcp',name:'ibkr'}]
-      })
-    });
-    const data = await res.json();
-    let txt = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
-    txt = txt.replace(/```json\n?|```\n?/g,'').trim();
-    const parsed = JSON.parse(txt);
-    Object.assign(S, parsed, {isLive: true});
-    setIBStatus(true);
-    // ── Broadcast to sub-pages via localStorage ──
-    broadcastSync();
-  } catch(e) {
-    setIBStatus(false);
-  }
-
-  updateAll();
-  btn.disabled = false; btn.textContent = '⟳ 同步 IB';
+// ── Black-Scholes ──
+function bsNorm(x) {
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const sign = x<0?-1:1, absX=Math.abs(x);
+  const t=1/(1+p*absX);
+  const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-absX*absX/2);
+  return 0.5*(1+sign*y);
+}
+function bsGreeks(S_price, K, T, r, sigma, isCall) {
+  if(T<=0||sigma<=0) return {delta:0,theta:0,gamma:0,vega:0};
+  const sqT=Math.sqrt(T);
+  const d1=(Math.log(S_price/K)+(r+sigma*sigma/2)*T)/(sigma*sqT);
+  const d2=d1-sigma*sqT;
+  const nd1=bsNorm(d1), nd2=bsNorm(d2);
+  const pdf_d1=Math.exp(-d1*d1/2)/Math.sqrt(2*Math.PI);
+  const delta = isCall ? nd1 : nd1-1;
+  const gamma = pdf_d1/(S_price*sigma*sqT);
+  const theta = (-(S_price*pdf_d1*sigma)/(2*sqT) - r*K*Math.exp(-r*T)*(isCall?nd2:bsNorm(-d2)))/365;
+  const vega  = S_price*pdf_d1*sqT/100;
+  return {delta:Math.abs(delta),theta:Math.abs(theta),gamma,vega};
 }
 
-// ════════════════════════════════════════════════
-// BROADCAST SYNC → localStorage → sub-pages
-// ════════════════════════════════════════════════
-function broadcastSync() {
-  const payload = {
-    ts: Date.now(),
-    isLive: S.isLive,
-    // Account summary
-    nlv:                S.nlv,
-    excess_liquidity:   S.excess_liquidity,
-    maintenance_margin: S.maintenance_margin,
-    available_funds:    S.available_funds,
-    leverage:           S.leverage,
-    // Market data
-    usd_twd:    S.usd_twd,
-    tsla_price: S.tsla_price,
-    // Portfolio
-    current_delta: S.current_delta,
-    // Positions (for roll engine presets)
-    positions: POSITIONS,
-  };
+// Parse IB option symbol → {sym, expiry, strike, isCall}
+function parseOptionSymbol(desc) {
+  // e.g. "TSLA 17JUL26 460 C" or "QQQ 17JUL26 680 P"
+  const m = desc.match(/^(\w+)\s+(\d{2})([A-Z]{3})(\d{2})\s+([\d.]+)\s+([CP])/);
+  if(!m) return null;
+  const monthMap={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+  const exp = new Date(2000+parseInt(m[4]), monthMap[m[3]], parseInt(m[2]));
+  return {sym:m[1], expiry:exp, strike:parseFloat(m[5]), isCall:m[6]==='C'};
+}
+
+async function syncIB() {
+  const btn = document.getElementById('sync-btn');
+  const lbl = document.getElementById('ib-label');
+  btn.disabled = true;
+
+  const steps = [
+    '① 帳戶數據...',
+    '② 倉位明細...',
+    '③ 計算 Greeks...',
+    '④ 股價/匯率...',
+    '⑤ 更新介面...'
+  ];
+  let stepIdx = 0;
+  const ticker = setInterval(() => {
+    btn.textContent = steps[Math.min(stepIdx, steps.length-1)];
+  }, 100);
+
   try {
-    localStorage.setItem('hub_sync_data', JSON.stringify(payload));
+    // ── STEP 1+2: IB MCP → account + positions ──
+    stepIdx = 0;
+    const ibRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4000,
+        system:`Call IBKR MCP: first get_account_summary, then get_account_positions.
+Return ONLY this JSON (no markdown):
+{
+  "summary":{"nlv":0,"excess_liquidity":0,"maintenance_margin":0,"available_funds":0,"leverage":0},
+  "positions":[{"symbol":"","description":"","qty":0,"market_price":0,"market_value":0,"unrealized_pnl":0,"asset_type":"OPT"}]
+}`,
+        messages:[{role:'user',content:'Fetch account summary and all positions. Return only JSON.'}],
+        mcp_servers:[{type:'url',url:'https://api.ibkr.com/v1/api/mcp',name:'ibkr'}]
+      })
+    });
+    const ibData = await ibRes.json();
+    let ibTxt = ibData.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    ibTxt = ibTxt.replace(/```json\n?|```\n?/g,'').trim();
+    // Extract first valid JSON object
+    const jsonMatch = ibTxt.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('No JSON in IB response');
+    const ibParsed = JSON.parse(jsonMatch[0]);
+
+    // Update account state
+    Object.assign(S, ibParsed.summary, {isLive:true});
+
+    // ── STEP 3: Black-Scholes Greeks for each option ──
+    stepIdx = 2;
+    const TODAY = new Date();
+    const r = 0.045; // risk-free rate
+
+    const newPositions = (ibParsed.positions || []).map(p => {
+      if(p.asset_type !== 'OPT') return {...p, delta:null, theta:null, gamma:null};
+
+      const parsed = parseOptionSymbol(p.description || p.symbol);
+      if(!parsed) return {...p, delta:null, theta:null, gamma:null};
+
+      // Find underlying price from stock positions
+      const stk = (ibParsed.positions||[]).find(x => x.asset_type==='STK' && x.symbol===parsed.sym);
+      const S_price = stk ? stk.market_price : p.market_price * 10; // fallback estimate
+
+      const T = Math.max((parsed.expiry - TODAY) / (365*24*3600*1000), 0.001);
+      // Estimate IV from market price using simplified approach
+      const midIV = p.market_price > 0 ? Math.min(Math.max(p.market_price / S_price * 8, 0.15), 2.0) : 0.45;
+      const g = bsGreeks(S_price, parsed.strike, T, r, midIV, parsed.isCall);
+
+      // Determine strategy
+      const isShort = p.qty < 0;
+      const isBox = p.description && p.description.toUpperCase().includes('BOX');
+      let strat = 'OPT';
+      if(isBox) strat = 'BOX';
+      else if(parsed.isCall && isShort) strat = 'CC';
+      else if(!parsed.isCall && isShort) strat = 'CSP';
+
+      const dte = Math.round(T * 365);
+      const pnlPct = p.unrealized_pnl && p.market_value
+        ? (p.unrealized_pnl / Math.abs(p.market_value) * 100) : 0;
+
+      return {
+        ...p,
+        strat, dte,
+        strike: parsed.strike,
+        isCall: parsed.isCall,
+        underlying: S_price,
+        iv: Math.round(midIV * 100),
+        delta: parseFloat(g.delta.toFixed(3)),
+        theta: parseFloat(g.theta.toFixed(2)),
+        gamma: parseFloat(g.gamma.toFixed(4)),
+        pnlPct: parseFloat(pnlPct.toFixed(1)),
+        origPrem: 0, // not available from IB positions
+        curPrem: Math.abs(p.market_price),
+      };
+    });
+
+    // Update POSITIONS array in-place
+    POSITIONS.length = 0;
+    newPositions.forEach(p => {
+      if(p.asset_type === 'OPT') {
+        POSITIONS.push({
+          sym: p.symbol?.split(' ')[0] || '',
+          strat: p.strat || 'OPT',
+          strike: p.strike || 0,
+          qty: Math.abs(p.qty),
+          origPrem: p.origPrem || 0,
+          curPrem: p.curPrem || 0,
+          dte: p.dte || 0,
+          delta: p.delta || 0,
+          ivr: 40, // default; would need separate IVR API
+          underlying: p.underlying || 0,
+          pnlPct: p.pnlPct || 0,
+        });
+      }
+    });
+
+    // Update net delta
+    S.current_delta = POSITIONS.reduce((sum, p) => {
+      if(p.strat === 'BOX') return sum;
+      const sign = (p.strat==='CC'||p.strat==='CSP') ? 1 : -1;
+      return sum + p.delta * p.qty * 100 * sign;
+    }, 0);
+
+    // ── STEP 4: Stock prices + FX via Yahoo Finance ──
+    stepIdx = 3;
+    try {
+      const symbols = ['TSLA','NVDA','VTI','QQQ','IWM','TWDUSD=X'];
+      const yfRes = await fetch(
+        `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(',')}&fields=regularMarketPrice`,
+        {headers:{'User-Agent':'Mozilla/5.0'}}
+      );
+      if(yfRes.ok) {
+        const yfData = await yfRes.json();
+        const quotes = yfData?.quoteResponse?.result || [];
+        quotes.forEach(q => {
+          const price = q.regularMarketPrice;
+          if(q.symbol === 'TSLA') S.tsla_price = price;
+          if(q.symbol === 'TWDUSD=X' && price > 0) S.usd_twd = parseFloat((1/price).toFixed(2));
+        });
+        // Update underlying prices in POSITIONS
+        quotes.forEach(q => {
+          POSITIONS.forEach(p => {
+            if(p.sym === q.symbol) p.underlying = q.regularMarketPrice;
+          });
+        });
+      }
+    } catch(yfErr) {
+      // Yahoo Finance CORS may block; silently continue
+      console.warn('Yahoo Finance fetch failed (CORS):', yfErr.message);
+    }
+
+    setIBStatus(true);
+
   } catch(e) {
-    console.warn('broadcastSync failed:', e);
+    console.error('Full sync error:', e);
+    setIBStatus(false);
+    lbl.textContent = '同步失敗：' + e.message.slice(0,30);
   }
+
+  // ── STEP 5: Refresh all UI ──
+  stepIdx = 4;
+  clearInterval(ticker);
+  updateAll();
+  btn.disabled = false;
+  btn.textContent = '⟳ 同步 IB';
 }
 
 function setIBStatus(live) {
@@ -892,184 +977,6 @@ function addTyping(id) {
 // INIT
 // ════════════════════════════════════════════════
 updateAll();
-broadcastSync(); // seed localStorage with initial (cached) data
-
-// ════════════════════════════════════════════════
-// GITHUB AUTO-PUSH
-// ════════════════════════════════════════════════
-const GH_CONFIG = {
-  owner:  'AllenLin188',
-  repo:   'ani-dashboard',
-  branch: 'main',
-  get token() { return sessionStorage.getItem('gh_token') || ''; },
-};
-
-const GH_FILES = [
-  'hub.html',
-  'allen_trading_dashboard.html',
-  'opening_decision_engine.html',
-  'roll_evaluation_engine.html',
-  'box_spread_manager.html',
-  'daily_pnl_report.html',
-  'portfolio_greeks.html',
-];
-
-async function ghGetSHA(filename) {
-  const url = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${filename}?ref=${GH_CONFIG.branch}`;
-  const res = await fetch(url, {
-    headers: { Authorization: `token ${GH_CONFIG.token}`, Accept: 'application/vnd.github.v3+json' }
-  });
-  if (res.status === 404) return null;
-  const d = await res.json();
-  return d.sha || null;
-}
-
-async function ghPushFile(filename, fileContent) {
-  const sha = await ghGetSHA(filename);
-  const body = {
-    message: 'Auto-sync ' + filename + ' ' + new Date().toLocaleString('zh-TW'),
-    content: btoa(unescape(encodeURIComponent(fileContent))),
-    branch: GH_CONFIG.branch,
-  };
-  if (sha) body.sha = sha;
-  const res = await fetch(`https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${filename}`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `token ${GH_CONFIG.token}`,
-      Accept: 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(filename + ': ' + err.message);
-  }
-  return res.json();
-}
-
-async function pushToGitHub() {
-  // Check if token is available in sessionStorage
-  if (!sessionStorage.getItem('gh_token')) {
-    openTokenModal();
-    return;
-  }
-  await doPush();
-}
-
-function openTokenModal() {
-  document.getElementById('token-modal').classList.add('show');
-  document.getElementById('token-hint').textContent = '';
-  setTimeout(() => document.getElementById('token-input').focus(), 100);
-}
-
-function closeTokenModal() {
-  document.getElementById('token-modal').classList.remove('show');
-  document.getElementById('token-input').value = '';
-}
-
-function saveToken() {
-  const val = document.getElementById('token-input').value.trim();
-  if (!val.startsWith('github_pat_') && !val.startsWith('ghp_')) {
-    document.getElementById('token-hint').textContent = '⚠️ 格式不對，應以 github_pat_ 或 ghp_ 開頭';
-    document.getElementById('token-hint').style.color = 'var(--red)';
-    return;
-  }
-  sessionStorage.setItem('gh_token', val);
-  closeTokenModal();
-  doPush();
-}
-
-// Close modal on backdrop click
-document.getElementById('token-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeTokenModal();
-});
-
-// Enter key in token input
-document.getElementById('token-input').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') saveToken();
-});
-
-async function doPush() {
-  const btn = document.getElementById('gh-push-btn');
-  const status = document.getElementById('gh-status');
-  btn.disabled = true;
-  status.style.color = 'var(--yellow)';
-
-  let ok = 0;
-  const errors = [];
-
-  for (const filename of GH_FILES) {
-    status.textContent = '上傳中 ' + filename + '…';
-    try {
-      const res = await fetch(filename + '?nocache=' + Date.now());
-      if (!res.ok) throw new Error('fetch failed');
-      const fileContent = await res.text();
-      await ghPushFile(filename, fileContent);
-      ok++;
-      status.textContent = '✅ ' + ok + '/' + GH_FILES.length + ' 完成';
-    } catch(e) {
-      // If 401, token is invalid — clear it
-      if (e.message.includes('401') || e.message.includes('Bad credentials')) {
-        sessionStorage.removeItem('gh_token');
-        status.textContent = '🔑 Token 無效，請重新輸入';
-        status.style.color = 'var(--red)';
-        btn.disabled = false;
-        openTokenModal();
-        return;
-      }
-      errors.push(filename + ': ' + e.message);
-    }
-  }
-
-  btn.disabled = false;
-  if (errors.length === 0) {
-    status.textContent = '✅ 全部 ' + ok + ' 個檔案已推送 · ' + new Date().toLocaleTimeString('zh-TW');
-    status.style.color = 'var(--green)';
-  } else {
-    status.textContent = '⚠️ ' + ok + ' 成功 / ' + errors.length + ' 失敗：' + errors.join(' | ');
-    status.style.color = 'var(--red)';
-    console.error('GitHub push errors:', errors);
-  }
-}
-</script>
-<!-- Code injected by live-server -->
-<script>
-	// <![CDATA[  <-- For SVG support
-	if ('WebSocket' in window) {
-		(function () {
-			function refreshCSS() {
-				var sheets = [].slice.call(document.getElementsByTagName("link"));
-				var head = document.getElementsByTagName("head")[0];
-				for (var i = 0; i < sheets.length; ++i) {
-					var elem = sheets[i];
-					var parent = elem.parentElement || head;
-					parent.removeChild(elem);
-					var rel = elem.rel;
-					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
-						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
-						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
-					}
-					parent.appendChild(elem);
-				}
-			}
-			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
-			var address = protocol + window.location.host + window.location.pathname + '/ws';
-			var socket = new WebSocket(address);
-			socket.onmessage = function (msg) {
-				if (msg.data == 'reload') window.location.reload();
-				else if (msg.data == 'refreshcss') refreshCSS();
-			};
-			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
-				console.log('Live reload enabled.');
-				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
-			}
-		})();
-	}
-	else {
-		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
-	}
-	// ]]>
 </script>
 </body>
 </html>
