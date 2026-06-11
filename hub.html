@@ -78,6 +78,42 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
 #sync-btn:hover{opacity:.85}
 #sync-btn:disabled{opacity:.4;cursor:not-allowed}
 
+/* Token Modal */
+#token-modal{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+  z-index:9999;align-items:center;justify-content:center;
+}
+#token-modal.show{display:flex;}
+#token-box{
+  background:var(--s1);border:1px solid var(--border2);border-radius:12px;
+  padding:24px;width:420px;max-width:90vw;
+}
+#token-box h3{margin:0 0 6px;font-size:15px;color:var(--text)}
+#token-box p{margin:0 0 16px;font-size:12px;color:var(--muted);line-height:1.6}
+#token-input{
+  width:100%;box-sizing:border-box;background:var(--s2);border:1px solid var(--border2);
+  color:var(--text);border-radius:6px;padding:8px 10px;font-size:12px;
+  font-family:monospace;margin-bottom:12px;
+}
+#token-input:focus{outline:none;border-color:var(--accent)}
+.token-btns{display:flex;gap:8px;justify-content:flex-end}
+.token-btns button{
+  padding:6px 16px;border:none;border-radius:6px;cursor:pointer;
+  font-size:12px;font-weight:600;
+}
+#token-save-btn{background:#238636;color:#fff}
+#token-cancel-btn{background:var(--s2);color:var(--muted)}
+#token-hint{font-size:10px;color:var(--muted);margin-top:8px}
+
+#gh-push-btn{
+  padding:5px 13px;background:#238636;color:#fff;
+  border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;
+  transition:opacity .2s
+}
+#gh-push-btn:hover{opacity:.85}
+#gh-push-btn:disabled{opacity:.4;cursor:not-allowed}
+#gh-status{font-size:10px;color:var(--muted);margin-left:4px}
+
 /* ══ ALERT BAR ══ */
 #alert-bar{
   background:rgba(239,68,68,.08);border-bottom:1px solid rgba(239,68,68,.25);
@@ -217,6 +253,22 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
 </head>
 <body>
 
+<!-- Token Modal -->
+<div id="token-modal">
+  <div id="token-box">
+    <h3>🔑 輸入 GitHub Personal Access Token</h3>
+    <p>Token 只存在本次瀏覽器 Session（關分頁即消失），<strong>不會寫入任何檔案</strong>。<br>
+    需要 <code>Contents: Read &amp; Write</code> 權限。<br>
+    <a href="https://github.com/settings/tokens?type=beta" target="_blank" style="color:var(--accent)">→ 到 GitHub 產生新 Token</a></p>
+    <input id="token-input" type="password" placeholder="github_pat_..." autocomplete="off" />
+    <div id="token-hint"></div>
+    <div class="token-btns">
+      <button id="token-cancel-btn" onclick="closeTokenModal()">取消</button>
+      <button id="token-save-btn" onclick="saveToken()">儲存並推送</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ TOPBAR ══ -->
 <div id="topbar">
   <div class="brand">
@@ -261,6 +313,8 @@ body{background:var(--bg);color:var(--text);font-family:'SF Pro Display',-apple-
       <span id="ib-label" style="color:var(--muted)">未連接</span>
     </div>
     <button id="sync-btn" onclick="syncIB()">⟳ 同步 IB</button>
+    <button id="gh-push-btn" onclick="pushToGitHub()">🚀 推送 GitHub</button>
+    <span id="gh-status"></span>
   </div>
 </div>
 
@@ -545,12 +599,42 @@ async function syncIB() {
     const parsed = JSON.parse(txt);
     Object.assign(S, parsed, {isLive: true});
     setIBStatus(true);
+    // ── Broadcast to sub-pages via localStorage ──
+    broadcastSync();
   } catch(e) {
     setIBStatus(false);
   }
 
   updateAll();
   btn.disabled = false; btn.textContent = '⟳ 同步 IB';
+}
+
+// ════════════════════════════════════════════════
+// BROADCAST SYNC → localStorage → sub-pages
+// ════════════════════════════════════════════════
+function broadcastSync() {
+  const payload = {
+    ts: Date.now(),
+    isLive: S.isLive,
+    // Account summary
+    nlv:                S.nlv,
+    excess_liquidity:   S.excess_liquidity,
+    maintenance_margin: S.maintenance_margin,
+    available_funds:    S.available_funds,
+    leverage:           S.leverage,
+    // Market data
+    usd_twd:    S.usd_twd,
+    tsla_price: S.tsla_price,
+    // Portfolio
+    current_delta: S.current_delta,
+    // Positions (for roll engine presets)
+    positions: POSITIONS,
+  };
+  try {
+    localStorage.setItem('hub_sync_data', JSON.stringify(payload));
+  } catch(e) {
+    console.warn('broadcastSync failed:', e);
+  }
 }
 
 function setIBStatus(live) {
@@ -808,6 +892,143 @@ function addTyping(id) {
 // INIT
 // ════════════════════════════════════════════════
 updateAll();
+broadcastSync(); // seed localStorage with initial (cached) data
+
+// ════════════════════════════════════════════════
+// GITHUB AUTO-PUSH
+// ════════════════════════════════════════════════
+const GH_CONFIG = {
+  owner:  'AllenLin188',
+  repo:   'ani-dashboard',
+  branch: 'main',
+  get token() { return sessionStorage.getItem('gh_token') || ''; },
+};
+
+const GH_FILES = [
+  'hub.html',
+  'allen_trading_dashboard.html',
+  'opening_decision_engine.html',
+  'roll_evaluation_engine.html',
+];
+
+async function ghGetSHA(filename) {
+  const url = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${filename}?ref=${GH_CONFIG.branch}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `token ${GH_CONFIG.token}`, Accept: 'application/vnd.github.v3+json' }
+  });
+  if (res.status === 404) return null;
+  const d = await res.json();
+  return d.sha || null;
+}
+
+async function ghPushFile(filename, fileContent) {
+  const sha = await ghGetSHA(filename);
+  const body = {
+    message: 'Auto-sync ' + filename + ' ' + new Date().toLocaleString('zh-TW'),
+    content: btoa(unescape(encodeURIComponent(fileContent))),
+    branch: GH_CONFIG.branch,
+  };
+  if (sha) body.sha = sha;
+  const res = await fetch(`https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${filename}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `token ${GH_CONFIG.token}`,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(filename + ': ' + err.message);
+  }
+  return res.json();
+}
+
+async function pushToGitHub() {
+  // Check if token is available in sessionStorage
+  if (!sessionStorage.getItem('gh_token')) {
+    openTokenModal();
+    return;
+  }
+  await doPush();
+}
+
+function openTokenModal() {
+  document.getElementById('token-modal').classList.add('show');
+  document.getElementById('token-hint').textContent = '';
+  setTimeout(() => document.getElementById('token-input').focus(), 100);
+}
+
+function closeTokenModal() {
+  document.getElementById('token-modal').classList.remove('show');
+  document.getElementById('token-input').value = '';
+}
+
+function saveToken() {
+  const val = document.getElementById('token-input').value.trim();
+  if (!val.startsWith('github_pat_') && !val.startsWith('ghp_')) {
+    document.getElementById('token-hint').textContent = '⚠️ 格式不對，應以 github_pat_ 或 ghp_ 開頭';
+    document.getElementById('token-hint').style.color = 'var(--red)';
+    return;
+  }
+  sessionStorage.setItem('gh_token', val);
+  closeTokenModal();
+  doPush();
+}
+
+// Close modal on backdrop click
+document.getElementById('token-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeTokenModal();
+});
+
+// Enter key in token input
+document.getElementById('token-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') saveToken();
+});
+
+async function doPush() {
+  const btn = document.getElementById('gh-push-btn');
+  const status = document.getElementById('gh-status');
+  btn.disabled = true;
+  status.style.color = 'var(--yellow)';
+
+  let ok = 0;
+  const errors = [];
+
+  for (const filename of GH_FILES) {
+    status.textContent = '上傳中 ' + filename + '…';
+    try {
+      const res = await fetch(filename + '?nocache=' + Date.now());
+      if (!res.ok) throw new Error('fetch failed');
+      const fileContent = await res.text();
+      await ghPushFile(filename, fileContent);
+      ok++;
+      status.textContent = '✅ ' + ok + '/' + GH_FILES.length + ' 完成';
+    } catch(e) {
+      // If 401, token is invalid — clear it
+      if (e.message.includes('401') || e.message.includes('Bad credentials')) {
+        sessionStorage.removeItem('gh_token');
+        status.textContent = '🔑 Token 無效，請重新輸入';
+        status.style.color = 'var(--red)';
+        btn.disabled = false;
+        openTokenModal();
+        return;
+      }
+      errors.push(filename + ': ' + e.message);
+    }
+  }
+
+  btn.disabled = false;
+  if (errors.length === 0) {
+    status.textContent = '✅ 全部 ' + ok + ' 個檔案已推送 · ' + new Date().toLocaleTimeString('zh-TW');
+    status.style.color = 'var(--green)';
+  } else {
+    status.textContent = '⚠️ ' + ok + ' 成功 / ' + errors.length + ' 失敗：' + errors.join(' | ');
+    status.style.color = 'var(--red)';
+    console.error('GitHub push errors:', errors);
+  }
+}
 </script>
 </body>
 </html>
